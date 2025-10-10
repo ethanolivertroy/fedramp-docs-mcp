@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "title": "Key Security Indicators Sample",
+    "version": "2025-07",
+    "published": "2025-07-10"
+  },
+  "items": [
+    {
+      "id": "KSI-001",
+      "title": "Customer-managed encryption at rest",
+      "description": "Require customer-managed encryption keys for data at rest.",
+      "category": "Data Security",
+      "status": "required",
+      "requirements": [
+        "Document encryption key management process"
+      ],
+      "control_mapping": ["SC-13", "SC-28"],
+      "evidence_examples": ["KMS key policy", "Encryption configuration"],
+      "references": [
+        {
+          "type": "NIST",
+          "id": "800-53r5 SC-13"
+        }
+      ]
+    },
+    {
+      "id": "KSI-002",
+      "title": "Audit significant changes",
+      "description": "Ensure significant change requests are documented and reviewed.",
+      "category": "Change Management",
+      "status": "recommended",
+      "requirements": [
+        "Log all change requests",
+        "Perform risk assessment"
+      ],
+      "references": [
+        {
+          "type": "NIST",
+          "id": "800-53r5 CM-3",
+          "description": "Significant change management guidance."
+        }
+      ]
+    }
+  ]
+}

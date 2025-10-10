@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "Key Security Indicators Sample",
+    "version": "2025-06",
+    "published": "2025-06-15"
+  },
+  "items": [
+    {
+      "id": "KSI-001",
+      "title": "Customer-managed encryption at rest",
+      "description": "Baseline requirement for encryption at rest.",
+      "category": "Data Security",
+      "status": "required",
+      "requirements": ["Document encryption key management process"],
+      "control_mapping": ["SC-13"],
+      "evidence_examples": ["KMS key policy"]
+    }
+  ]
+}

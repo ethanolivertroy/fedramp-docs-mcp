@@ -1,0 +1,42 @@
+# Source files
+src/
+tests/
+*.test.ts
+*.spec.ts
+
+# Configuration files
+tsconfig.json
+vitest.config.ts
+.editorconfig
+.nvmrc
+
+# CI/CD
+.github/
+
+# Development files
+.gitignore
+.git/
+.vscode/
+.idea/
+
+# Environment
+.env*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts not needed
+*.tsbuildinfo
+
+# Documentation (keep README.md via files field in package.json)
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+
+# Cache
+.cache/
+.vitest/
+node_modules/

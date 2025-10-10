@@ -1,0 +1,60 @@
+{
+  "name": "fedramp-docs-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for exploring the FedRAMP docs repository.",
+  "type": "module",
+  "author": "Ethan Troy",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethanolivertroy/fedramp-docs-mcp.git"
+  },
+  "homepage": "https://github.com/ethanolivertroy/fedramp-docs-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/ethanolivertroy/fedramp-docs-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fedramp",
+    "compliance",
+    "nist",
+    "security",
+    "frmr",
+    "cloud-security"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "fedramp-docs-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "escape-string-regexp": "^5.0.0",
+    "fast-json-stable-stringify": "^2.1.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.4.5",
+    "lunr": "^2.3.9",
+    "simple-git": "^3.22.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.4"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^8.1.0",
+    "@types/lunr": "^2.3.7",
+    "@types/node": "^20.12.12",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
