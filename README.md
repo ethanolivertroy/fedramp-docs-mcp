@@ -173,7 +173,9 @@ The FedRAMP Docs MCP server works with any MCP-compatible client. Below are setu
 
 **Recommended clients:**
 - **Claude Desktop** - Most mature MCP integration, excellent tool discovery
+- **Claude Code CLI** - Official Anthropic CLI tool, great for terminal workflows
 - **LM Studio** - Native MCP support, works with local models for privacy
+- **OpenCode** - Terminal-based coding agent with MCP support
 - **Goose** - Experimental support, may have tool discovery issues
 
 ### Claude Desktop
@@ -197,58 +199,72 @@ Add the server to your Claude Desktop configuration file:
 
 After updating the config, restart Claude Desktop. The FedRAMP Docs tools will appear in your conversations.
 
-### Goose
+### Claude Code CLI
 
-[Goose](https://github.com/block/goose) is Block's open-source AI agent. You can add the FedRAMP Docs MCP server using any of these methods:
+[Claude Code](https://docs.claude.com/en/docs/claude-code) is Anthropic's official CLI tool with built-in MCP support.
 
-#### Method 1: Via Goose CLI (Recommended)
+#### Method 1: Using CLI (Recommended)
 
 ```bash
-goose configure
+# Add the FedRAMP Docs MCP server
+claude mcp add --transport stdio fedramp-docs fedramp-docs-mcp
+
+# With full path
+claude mcp add --transport stdio fedramp-docs /path/to/node/bin/fedramp-docs-mcp
+
+# List configured servers
+claude mcp list
+
+# Remove if needed
+claude mcp remove fedramp-docs
 ```
 
-Then select:
-1. `Add Extension`
-2. `Command-line Extension`
-3. Enter the following details:
-   - **Name:** `FedRAMP Docs`
-   - **Command:** `fedramp-docs-mcp`
-   - **Timeout:** `300`
+#### Method 2: Configuration File
 
-#### Method 2: Via Goose Desktop App
+Claude Code supports three configuration scopes:
 
-1. Open Goose Desktop
-2. Click **Extensions** in the sidebar
-3. Click **Add custom extension**
-4. Fill in the form:
-   - **Extension Name:** `FedRAMP Docs`
-   - **Type:** `STDIO`
-   - **Command:** `fedramp-docs-mcp`
-   - **Timeout:** `300`
-   - **Environment Variables:** (optional)
-     - `FEDRAMP_DOCS_PATH`: `/path/to/FedRAMP/docs`
-     - `FEDRAMP_DOCS_AUTO_UPDATE`: `true`
+1. **Project-scoped** (recommended for teams): `.mcp.json` in project root
+2. **User-scoped**: `~/.claude/settings.local.json`
+3. **Project-local**: `.claude/settings.local.json` in project root
 
-#### Method 3: Via Config File
-
-Edit `~/.config/goose/config.yaml` (Linux/macOS) or `%USERPROFILE%\.config\goose\config.yaml` (Windows):
-
-```yaml
-extensions:
-  fedramp-docs:
-    name: FedRAMP Docs
-    cmd: fedramp-docs-mcp
-    enabled: true
-    type: stdio
-    timeout: 300
-    envs:
-      FEDRAMP_DOCS_PATH: "/path/to/FedRAMP/docs"  # optional
-      FEDRAMP_DOCS_AUTO_UPDATE: "true"            # optional
+**Example `.mcp.json` (project-scoped, can be version-controlled):**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
 ```
 
-After configuration, restart Goose or reload extensions. You can test by asking: "What FedRAMP tools are available?"
+**With environment variable expansion:**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_PATH": "${HOME}/fedramp-docs",
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
 
-**Note:** Goose's MCP support is still maturing and may have issues discovering tools from stdio servers. If you experience problems with tool discovery, consider using Claude Desktop or LM Studio instead.
+**Testing:**
+- Restart Claude Code after configuration changes
+- Use `/mcp` command for interactive management
+- Use `--mcp-debug` flag for troubleshooting: `claude --mcp-debug`
+- Verify with: `claude mcp list`
+
+**Note:** Project-scoped configurations in `.mcp.json` enable team collaboration by ensuring all team members have access to the same MCP tools.
 
 ### LM Studio
 
@@ -301,6 +317,121 @@ After configuration, restart Goose or reload extensions. You can test by asking:
 7. **Approve tool calls** - LM Studio will show a confirmation dialog before executing each tool
 
 **Note:** Requires global installation (`npm install -g .`) or use the full path to the executable. Find your path with: `which fedramp-docs-mcp`
+
+### OpenCode
+
+[OpenCode](https://opencode.ai/) is a powerful AI coding agent built for the terminal with native MCP support.
+
+#### Setup Instructions
+
+1. **Create or edit your OpenCode configuration file:**
+
+**Config file location:**
+- Global: `~/.config/opencode/opencode.json`
+- Project: `opencode.json` (in your project root)
+
+2. **Add the FedRAMP Docs MCP server:**
+
+**Basic configuration:**
+```json
+{
+  "mcp": {
+    "fedramp-docs": {
+      "type": "local",
+      "command": ["fedramp-docs-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+**With full path:**
+```json
+{
+  "mcp": {
+    "fedramp-docs": {
+      "type": "local",
+      "command": ["/path/to/node/bin/fedramp-docs-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+**With environment variables:**
+```json
+{
+  "mcp": {
+    "fedramp-docs": {
+      "type": "local",
+      "command": ["fedramp-docs-mcp"],
+      "enabled": true,
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true",
+        "FEDRAMP_DOCS_PATH": "/path/to/FedRAMP/docs"
+      }
+    }
+  }
+}
+```
+
+3. **Restart OpenCode** to load the MCP server
+4. **Test it** - The FedRAMP tools will be automatically available alongside built-in tools
+
+**Note:** MCP servers add to your context, so enable only the ones you need. Use `"enabled": false` to temporarily disable a server without removing it.
+
+### Goose
+
+[Goose](https://github.com/block/goose) is Block's open-source AI agent. You can add the FedRAMP Docs MCP server using any of these methods:
+
+#### Method 1: Via Goose CLI (Recommended)
+
+```bash
+goose configure
+```
+
+Then select:
+1. `Add Extension`
+2. `Command-line Extension`
+3. Enter the following details:
+   - **Name:** `FedRAMP Docs`
+   - **Command:** `fedramp-docs-mcp`
+   - **Timeout:** `300`
+
+#### Method 2: Via Goose Desktop App
+
+1. Open Goose Desktop
+2. Click **Extensions** in the sidebar
+3. Click **Add custom extension**
+4. Fill in the form:
+   - **Extension Name:** `FedRAMP Docs`
+   - **Type:** `STDIO`
+   - **Command:** `fedramp-docs-mcp`
+   - **Timeout:** `300`
+   - **Environment Variables:** (optional)
+     - `FEDRAMP_DOCS_PATH`: `/path/to/FedRAMP/docs`
+     - `FEDRAMP_DOCS_AUTO_UPDATE`: `true`
+
+#### Method 3: Via Config File
+
+Edit `~/.config/goose/config.yaml` (Linux/macOS) or `%USERPROFILE%\.config\goose\config.yaml` (Windows):
+
+```yaml
+extensions:
+  fedramp-docs:
+    name: FedRAMP Docs
+    cmd: fedramp-docs-mcp
+    enabled: true
+    type: stdio
+    timeout: 300
+    envs:
+      FEDRAMP_DOCS_PATH: "/path/to/FedRAMP/docs"  # optional
+      FEDRAMP_DOCS_AUTO_UPDATE: "true"            # optional
+```
+
+After configuration, restart Goose or reload extensions. You can test by asking: "What FedRAMP tools are available?"
+
+**Note:** Goose's MCP support is still maturing and may have issues discovering tools from stdio servers. If you experience problems with tool discovery, consider using Claude Desktop, Claude Code CLI, LM Studio, or OpenCode instead.
 
 ### MCP Inspector (Debugging)
 
