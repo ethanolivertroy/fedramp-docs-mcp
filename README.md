@@ -169,7 +169,12 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 
 ## MCP Client Configuration
 
-The FedRAMP Docs MCP server works with any MCP-compatible client. Below are setup instructions for popular clients.
+The FedRAMP Docs MCP server works with any MCP-compatible client. Below are setup instructions for the most popular and reliable clients.
+
+**Recommended clients:**
+- **Claude Desktop** - Most mature MCP integration, excellent tool discovery
+- **LM Studio** - Native MCP support, works with local models for privacy
+- **Goose** - Experimental support, may have tool discovery issues
 
 ### Claude Desktop
 
@@ -242,6 +247,60 @@ extensions:
 ```
 
 After configuration, restart Goose or reload extensions. You can test by asking: "What FedRAMP tools are available?"
+
+**Note:** Goose's MCP support is still maturing and may have issues discovering tools from stdio servers. If you experience problems with tool discovery, consider using Claude Desktop or LM Studio instead.
+
+### LM Studio
+
+[LM Studio](https://lmstudio.ai/) (v0.3.17+) has native MCP support and works great with local models for privacy-focused workflows.
+
+#### Setup Instructions
+
+1. **Open LM Studio** and click the **Program** tab (terminal icon >_) in the right sidebar
+2. **Click "Edit mcp.json"** under the Install section
+3. **Add the FedRAMP Docs configuration:**
+
+**Config file location:**
+- macOS/Linux: `~/.lmstudio/mcp.json`
+- Windows: `%USERPROFILE%\.lmstudio\mcp.json`
+
+**Basic configuration:**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+**Using full path (recommended if command not found):**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "/path/to/node/bin/fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true",
+        "FEDRAMP_DOCS_PATH": "/path/to/FedRAMP/docs"
+      }
+    }
+  }
+}
+```
+
+4. **Save the file** - LM Studio will automatically load the server
+5. **Start chatting** - Open a chat with any local model
+6. **Test it** - Ask: "List all FedRAMP FRMR documents"
+7. **Approve tool calls** - LM Studio will show a confirmation dialog before executing each tool
+
+**Note:** Requires global installation (`npm install -g .`) or use the full path to the executable. Find your path with: `which fedramp-docs-mcp`
 
 ### MCP Inspector (Debugging)
 
