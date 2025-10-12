@@ -49,6 +49,8 @@ npm install -g .
 fedramp-docs-mcp
 ```
 
+**Note:** Global installation is required if you want to use `fedramp-docs-mcp` as the command in MCP client configurations (Claude Desktop, Goose, etc.). Alternatively, you can use the full path to the built server: `node /path/to/fedramp-docs-mcp/dist/index.js`
+
 During startup the server ensures a FedRAMP/docs repository is available, indexes FRMR JSON and markdown content, then begins serving requests on MCP stdio.
 
 ## Configuration
@@ -167,7 +169,13 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 
 ## MCP Client Configuration
 
-Example Claude Desktop snippet:
+The FedRAMP Docs MCP server works with any MCP-compatible client. Below are setup instructions for popular clients.
+
+### Claude Desktop
+
+Add the server to your Claude Desktop configuration file:
+
+**Location:** `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
 
 ```json
 {
@@ -182,7 +190,62 @@ Example Claude Desktop snippet:
 }
 ```
 
-For use with the MCP Inspector (debugging):
+After updating the config, restart Claude Desktop. The FedRAMP Docs tools will appear in your conversations.
+
+### Goose
+
+[Goose](https://github.com/block/goose) is Block's open-source AI agent. You can add the FedRAMP Docs MCP server using any of these methods:
+
+#### Method 1: Via Goose CLI (Recommended)
+
+```bash
+goose configure
+```
+
+Then select:
+1. `Add Extension`
+2. `Command-line Extension`
+3. Enter the following details:
+   - **Name:** `FedRAMP Docs`
+   - **Command:** `fedramp-docs-mcp`
+   - **Timeout:** `300`
+
+#### Method 2: Via Goose Desktop App
+
+1. Open Goose Desktop
+2. Click **Extensions** in the sidebar
+3. Click **Add custom extension**
+4. Fill in the form:
+   - **Extension Name:** `FedRAMP Docs`
+   - **Type:** `STDIO`
+   - **Command:** `fedramp-docs-mcp`
+   - **Timeout:** `300`
+   - **Environment Variables:** (optional)
+     - `FEDRAMP_DOCS_PATH`: `/path/to/FedRAMP/docs`
+     - `FEDRAMP_DOCS_AUTO_UPDATE`: `true`
+
+#### Method 3: Via Config File
+
+Edit `~/.config/goose/config.yaml` (Linux/macOS) or `%USERPROFILE%\.config\goose\config.yaml` (Windows):
+
+```yaml
+extensions:
+  fedramp-docs:
+    name: FedRAMP Docs
+    cmd: fedramp-docs-mcp
+    enabled: true
+    type: stdio
+    timeout: 300
+    envs:
+      FEDRAMP_DOCS_PATH: "/path/to/FedRAMP/docs"  # optional
+      FEDRAMP_DOCS_AUTO_UPDATE: "true"            # optional
+```
+
+After configuration, restart Goose or reload extensions. You can test by asking: "What FedRAMP tools are available?"
+
+### MCP Inspector (Debugging)
+
+For debugging and testing the server directly:
 
 ```bash
 npx @modelcontextprotocol/inspector node dist/index.js
