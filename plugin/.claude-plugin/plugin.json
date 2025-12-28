@@ -1,0 +1,11 @@
+{
+  "name": "fedramp-docs",
+  "description": "FedRAMP compliance toolkit - search docs, analyze controls, track changes",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ethan Troy"
+  },
+  "repository": "https://github.com/ethanolivertroy/fedramp-docs-mcp",
+  "license": "MIT",
+  "keywords": ["fedramp", "compliance", "nist", "security", "frmr", "cloud"]
+}

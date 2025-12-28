@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Tests
+tests
+coverage
+*.test.ts
+vitest.config.ts
+
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation (built into image already)
+*.md
+!README.md
+
+# Build artifacts (rebuilt in container)
+dist
+
+# Misc
+.env
+.env.*
+*.log
+.DS_Store
+.cache
+
+# Plugin (separate distribution)
+plugin

@@ -1,0 +1,48 @@
+services:
+  fedramp-docs-mcp:
+    build: .
+    container_name: fedramp-docs-mcp
+    stdin_open: true
+    tty: true
+
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+
+    # Temporary filesystem for runtime needs
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+    # Persistent cache for FedRAMP docs repo
+    volumes:
+      - fedramp-cache:/home/mcpuser/.cache/fedramp-docs:rw
+
+    # Network isolation - no external access by default
+    networks:
+      - mcp-internal
+
+    # Environment configuration
+    environment:
+      - NODE_ENV=production
+      - FEDRAMP_DOCS_AUTO_UPDATE=true
+      - FEDRAMP_DOCS_INDEX_PERSIST=true
+      - FEDRAMP_DOCS_ALLOW_AUTO_CLONE=true
+
+volumes:
+  fedramp-cache:
+    driver: local
+
+networks:
+  mcp-internal:
+    driver: bridge
+    internal: true  # No external network access

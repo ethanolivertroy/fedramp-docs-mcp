@@ -5,6 +5,12 @@ export type FrmrDocumentType =
   | "SCN"
   | "FRD"
   | "ADS"
+  | "CCM"
+  | "FSI"
+  | "ICP"
+  | "PVA"
+  | "RSC"
+  | "UCM"
   | "unknown";
 
 export interface FrmrDocumentMeta {

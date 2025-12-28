@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}

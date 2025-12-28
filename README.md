@@ -15,11 +15,31 @@ https://github.com/user-attachments/assets/6c96ace6-cbd8-4479-9aa9-4474643362c4
 
 ## Features
 
-- Auto-detects FRMR JSON files (KSI, MAS, VDR, SCN, FRD, ADS) and builds typed metadata.
+- Auto-detects all 12 FRMR JSON document types and builds typed metadata.
 - Extracts KSI entries, flattened control mappings, and Significant Change references.
 - Fast markdown search via an inverted index backed by Lunr with snippets and line numbers.
+- Indexes 62+ markdown files from `tools/site/content/` (Zensical static site content).
 - Structured diffing between FRMR versions, including per-item change detection.
 - Health check, version listing, and curated Significant Change guidance aggregator.
+- **Claude Plugin** with slash commands, agent skills, and compliance analyst agent.
+- **Docker support** with security hardening following 2025 best practices.
+
+### Supported Document Types
+
+| Type | Full Name |
+|------|-----------|
+| KSI | Key Security Indicators |
+| MAS | Minimum Assessment Scope |
+| VDR | Vulnerability Detection and Response |
+| SCN | Significant Change Notifications |
+| FRD | FedRAMP Definitions |
+| ADS | Authorization Data Sharing |
+| CCM | Collaborative Continuous Monitoring |
+| FSI | FedRAMP Security Inbox |
+| ICP | Incident Communications Procedures |
+| PVA | Persistent Validation and Assessment |
+| RSC | Recommended Secure Configuration |
+| UCM | Using Cryptographic Modules |
 
 ## Getting Started
 
@@ -440,6 +460,96 @@ For debugging and testing the server directly:
 ```bash
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
+
+## Claude Plugin
+
+The repository includes a Claude Code plugin that provides slash commands, agent skills, and a specialized compliance analyst agent.
+
+### Installation
+
+```bash
+# Load plugin during Claude Code session
+claude --plugin-dir /path/to/fedramp-docs-mcp/plugin
+```
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/fedramp-docs:search <query>` | Search FedRAMP documentation |
+| `/fedramp-docs:list-controls [family]` | List NIST controls |
+| `/fedramp-docs:list-ksi [filter]` | List Key Security Indicators |
+| `/fedramp-docs:list-documents` | List all FRMR documents |
+| `/fedramp-docs:compare <doc1> <doc2>` | Compare document versions |
+| `/fedramp-docs:health` | Check MCP server status |
+
+### Agent Skills
+
+- **frmr-analysis** - Automatically invoked when analyzing FRMR documents or control mappings
+- **control-mapping** - Automatically invoked when mapping NIST controls to FedRAMP requirements
+
+See [plugin/README.md](plugin/README.md) for full documentation.
+
+## Docker
+
+Run the MCP server in a security-hardened Docker container.
+
+### Quick Start
+
+```bash
+# Build the image
+docker build -t fedramp-docs-mcp .
+
+# Run interactively (for MCP stdio)
+docker run --rm -i \
+  --security-opt no-new-privileges:true \
+  --cap-drop ALL \
+  --read-only \
+  --memory 512m \
+  -v fedramp-cache:/home/mcpuser/.cache/fedramp-docs \
+  fedramp-docs-mcp
+```
+
+### Docker Compose
+
+```bash
+# Start with docker-compose (security hardening included)
+docker compose up -d
+```
+
+### Claude Desktop with Docker
+
+Configure Claude Desktop to use the Docker container:
+
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--security-opt", "no-new-privileges:true",
+        "--cap-drop", "ALL",
+        "--read-only",
+        "--memory", "512m",
+        "-v", "fedramp-cache:/home/mcpuser/.cache/fedramp-docs",
+        "fedramp-docs-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+### Security Features
+
+The Docker setup follows 2025 MCP security best practices:
+
+- **Non-root user**: Runs as `mcpuser` (UID 1001)
+- **Read-only filesystem**: Prevents unauthorized modifications
+- **Dropped capabilities**: `--cap-drop ALL` removes all Linux capabilities
+- **No new privileges**: Prevents privilege escalation
+- **Resource limits**: Memory and CPU constraints
+- **Network isolation**: Internal network with no external access by default
 
 ## Development
 

@@ -171,7 +171,7 @@ function extractPublishedDate(metadata: Record<string, unknown>): string | undef
 function normalizeDocType(typeGuess: string): FrmrDocumentType {
   const upper = typeGuess.toUpperCase();
   if (
-    ["KSI", "MAS", "VDR", "SCN", "FRD", "ADS"].includes(upper)
+    ["KSI", "MAS", "VDR", "SCN", "FRD", "ADS", "CCM", "FSI", "ICP", "PVA", "RSC", "UCM"].includes(upper)
   ) {
     return upper as FrmrDocumentType;
   }
