@@ -7,7 +7,11 @@ const schema = z.object({
   family: z.string().optional(),
   control: z.string().optional(),
   source: z
-    .enum(["KSI", "MAS", "VDR", "SCN", "FRD", "ADS", "unknown"])
+    .enum([
+      "KSI", "MAS", "VDR", "SCN", "FRD", "ADS",
+      "CCM", "FSI", "ICP", "PVA", "RSC", "UCM",
+      "unknown",
+    ])
     .optional(),
 });
 

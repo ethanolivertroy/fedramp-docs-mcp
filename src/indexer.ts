@@ -178,6 +178,91 @@ function normalizeDocType(typeGuess: string): FrmrDocumentType {
   return "unknown";
 }
 
+interface ExtractedItem {
+  item: unknown;
+  category?: string;
+}
+
+/**
+ * Recursively extract all items from nested FRMR JSON structure.
+ * Handles both new (requirements, indicators, ALL) and legacy (items, entries, controls, records) formats.
+ */
+function extractAllItems(
+  obj: unknown,
+  parentCategory?: string,
+): ExtractedItem[] {
+  const results: ExtractedItem[] = [];
+  if (!obj || typeof obj !== "object") return results;
+
+  // Keys that contain item arrays
+  const itemArrayKeys = new Set([
+    // New FRMR 2025 structure
+    "requirements",
+    "indicators",
+    "ALL",
+    // Legacy structure (for backwards compatibility)
+    "items",
+    "entries",
+    "controls",
+    "records",
+  ]);
+
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    // Skip metadata keys
+    if (["$schema", "$id", "info", "metadata"].includes(key)) continue;
+
+    // Found an array of items
+    if (itemArrayKeys.has(key)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          results.push({ item, category: parentCategory });
+        }
+      }
+    } else if (typeof value === "object" && value !== null) {
+      // Recurse into nested objects, passing current key as potential category
+      results.push(...extractAllItems(value, key));
+    }
+  }
+  return results;
+}
+
+/**
+ * Extract KSI indicators specifically with theme information.
+ * KSI structure: { KSI: { AFR: { indicators: [...] }, CED: { indicators: [...] }, ... } }
+ */
+function extractKsiIndicators(
+  parsed: Record<string, unknown>,
+): ExtractedItem[] {
+  const results: ExtractedItem[] = [];
+  const ksiSection = parsed.KSI;
+
+  if (!ksiSection || typeof ksiSection !== "object") {
+    return results;
+  }
+
+  for (const [themeName, themeData] of Object.entries(
+    ksiSection as Record<string, unknown>,
+  )) {
+    if (!themeData || typeof themeData !== "object") continue;
+    const theme = themeData as Record<string, unknown>;
+    const indicators = theme.indicators;
+
+    if (Array.isArray(indicators)) {
+      for (const indicator of indicators) {
+        results.push({
+          item: {
+            ...((indicator as Record<string, unknown>) ?? {}),
+            theme: themeName,
+            themeName: theme.name,
+          },
+          category: themeName,
+        });
+      }
+    }
+  }
+  return results;
+}
+
 function coerceStringArray(
   value: unknown,
 ): string[] | undefined {
@@ -219,19 +304,29 @@ function buildKsiItems(
       ? (item.references as Array<Record<string, unknown>>)
       : undefined;
 
+    // New FRMR KSI structure uses 'name' and 'statement' instead of 'title' and 'description'
+    // Also includes 'theme' (added by extractKsiIndicators) for the category
+    const impactObj = item.impact as Record<string, unknown> | undefined;
     const ksiItem: KsiItem = {
       id: idValue,
-      title: typeof item.title === "string" ? item.title : undefined,
+      // Use 'name' (new) or 'title' (legacy)
+      title:
+        (typeof item.name === "string" ? item.name : undefined) ||
+        (typeof item.title === "string" ? item.title : undefined),
+      // Use 'statement' (new) or 'description' (legacy)
       description:
-        typeof item.description === "string" ? item.description : undefined,
+        (typeof item.statement === "string" ? item.statement : undefined) ||
+        (typeof item.description === "string" ? item.description : undefined),
+      // Use 'theme' (new, from extractKsiIndicators) or 'category' (legacy)
       category:
-        typeof item.category === "string"
+        (typeof item.theme === "string" ? item.theme : undefined) ||
+        (typeof item.category === "string"
           ? item.category
           : Array.isArray(item.categories)
             ? (item.categories.find((value) => typeof value === "string") as
                 | string
                 | undefined)
-            : undefined,
+            : undefined),
       status: typeof item.status === "string" ? item.status : undefined,
       sourceRef:
         typeof item.source_ref === "string"
@@ -262,6 +357,16 @@ function buildKsiItems(
               : undefined,
       })),
       docPath: doc.path,
+      // New FRMR 2025 fields
+      statement: typeof item.statement === "string" ? item.statement : undefined,
+      theme: typeof item.theme === "string" ? item.theme : undefined,
+      impact: impactObj && typeof impactObj === "object"
+        ? {
+            low: impactObj.low === true,
+            moderate: impactObj.moderate === true,
+            high: impactObj.high === true,
+          }
+        : undefined,
     };
     results.push(ksiItem);
   }
@@ -394,29 +499,46 @@ async function scanRepository(): Promise<BuildResult> {
     );
 
     const parsedRecord = parsed as Record<string, unknown>;
+
+    // New FRMR structure uses 'info' instead of 'metadata'
+    const info =
+      parsedRecord.info && typeof parsedRecord.info === "object"
+        ? (parsedRecord.info as Record<string, unknown>)
+        : {};
+
+    // Also check legacy 'metadata' for backwards compatibility
     const metadata =
       parsedRecord.metadata && typeof parsedRecord.metadata === "object"
         ? (parsedRecord.metadata as Record<string, unknown>)
         : {};
 
+    // Extract title from info.name, metadata.title, or parsedRecord.title
     const title =
+      (typeof info.name === "string" && info.name) ||
       (typeof metadata.title === "string" && metadata.title) ||
       (typeof parsedRecord.title === "string" && parsedRecord.title) ||
       deriveTitleFromFilename(path.basename(relativePath));
 
+    // Extract version from info.releases[0].id or fallback to filename
+    const releases = Array.isArray(info.releases) ? info.releases : [];
+    const latestRelease =
+      releases.length > 0 && typeof releases[0] === "object"
+        ? (releases[0] as Record<string, unknown>)
+        : null;
     const version =
+      (latestRelease && typeof latestRelease.id === "string" && latestRelease.id) ||
       (typeof metadata.version === "string" && metadata.version) ||
       extractVersionFromString(path.basename(relativePath));
-    const published = extractPublishedDate(metadata);
 
-    const candidateArrays = [
-      parsedRecord.items,
-      parsedRecord.controls,
-      parsedRecord.entries,
-      parsedRecord.records,
-    ].filter((value) => Array.isArray(value)) as unknown[][];
+    // Extract published date from releases or legacy metadata
+    const published =
+      (latestRelease && typeof latestRelease.published_date === "string"
+        ? latestRelease.published_date
+        : undefined) || extractPublishedDate(metadata);
 
-    const items = candidateArrays.length ? candidateArrays[0] : [];
+    // New structure: use extractAllItems for nested requirements/indicators
+    const extractedItems = extractAllItems(parsedRecord);
+    const items = extractedItems.map((e) => e.item);
     const idKey = detectIdKey(items);
 
     const docRecord: FrmrDocumentRecord = {
@@ -435,8 +557,20 @@ async function scanRepository(): Promise<BuildResult> {
 
     frmrDocuments.push(docRecord);
 
-    if (docTypeGuess === "KSI" && items.length) {
-      ksiItems.push(...buildKsiItems(docRecord, items));
+    // For KSI documents, use specialized extraction that preserves theme info
+    if (docTypeGuess === "KSI") {
+      const ksiIndicators = extractKsiIndicators(parsedRecord);
+      if (ksiIndicators.length > 0) {
+        ksiItems.push(
+          ...buildKsiItems(
+            docRecord,
+            ksiIndicators.map((e) => e.item),
+          ),
+        );
+      } else if (items.length) {
+        // Fallback to generic items if KSI-specific extraction fails
+        ksiItems.push(...buildKsiItems(docRecord, items));
+      }
     }
 
     if (items.length) {

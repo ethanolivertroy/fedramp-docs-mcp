@@ -47,6 +47,10 @@ export interface KsiItem {
   evidenceExamples?: string[];
   references?: Array<{ type?: string; id?: string; text?: string }>;
   docPath: string;
+  // New fields for FRMR 2025 structure
+  statement?: string;
+  theme?: string;
+  impact?: { low?: boolean; moderate?: boolean; high?: boolean };
 }
 
 export interface ControlMapping {
