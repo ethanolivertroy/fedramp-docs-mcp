@@ -130,19 +130,51 @@ The server includes automatic update checking to keep the FedRAMP docs current:
 
 ## Available Tools
 
-All tools follow the error model described in the product spec and respond with JSON payloads. Key tools include:
+The server provides 20 tools organized into categories. All tools follow the error model and respond with JSON payloads.
 
-- `list_frmr_documents` — enumerate indexed FRMR JSON documents.
-- `get_frmr_document` — return full JSON and summary for a document.
-- `list_ksi` / `get_ksi` — filter and inspect Key Security Indicators.
-- `list_controls` — flatten FRMR → NIST control mappings.
-- `search_markdown` / `read_markdown` — full-text search and retrieval with digests.
-- `list_versions` — collate version metadata by FRMR document type.
-- `diff_frmr` — structured diff of two FRMR datasets using ID-aware comparison.
-- `grep_controls_in_markdown` — locate control references inside markdown guidance.
-- `get_significant_change_guidance` — curated Significant Change references across FRMR + markdown.
-- `health_check` — confirm the server indexed successfully and expose repo path.
-- `update_repository` — force update the cached FedRAMP docs to the latest version.
+### Document Discovery
+| Tool | Description |
+|------|-------------|
+| `list_frmr_documents` | Enumerate indexed FRMR JSON documents |
+| `get_frmr_document` | Return full JSON and summary for a document |
+| `list_versions` | Collate version metadata by FRMR document type |
+
+### KSI (Key Security Indicators)
+| Tool | Description |
+|------|-------------|
+| `list_ksi` | Filter and inspect Key Security Indicators |
+| `get_ksi` | Get a specific KSI item by ID |
+| `filter_by_impact` | Filter KSI items by impact level (low/moderate/high) |
+| `get_theme_summary` | Get comprehensive guidance for a KSI theme (IAM, CNA, etc.) |
+| `get_evidence_checklist` | Collect evidence examples for requirements |
+
+### Control Mapping
+| Tool | Description |
+|------|-------------|
+| `list_controls` | Flatten FRMR → control mappings |
+| `get_control_requirements` | Get all requirements mapped to a specific control |
+| `analyze_control_coverage` | Report which control families have FedRAMP requirements |
+
+### Search & Lookup
+| Tool | Description |
+|------|-------------|
+| `search_markdown` | Full-text search across documentation |
+| `read_markdown` | Read specific markdown file contents |
+| `search_definitions` | Search FedRAMP definitions (FRD) by term |
+| `get_requirement_by_id` | Get any FRMR requirement by ID (KSI-*, FRR-*, FRD-*) |
+
+### Analysis
+| Tool | Description |
+|------|-------------|
+| `diff_frmr` | Structured diff of two FRMR datasets |
+| `grep_controls_in_markdown` | Locate control references in markdown |
+| `get_significant_change_guidance` | Curated Significant Change references |
+
+### System
+| Tool | Description |
+|------|-------------|
+| `health_check` | Confirm the server indexed successfully |
+| `update_repository` | Force update the cached FedRAMP docs |
 
 See `src/tools/` for the precise schemas implemented with Zod. Each tool returns either a successful object or an `error` payload containing `code`, `message`, and optional `hint`.
 
@@ -155,11 +187,14 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 "List all available FedRAMP documents"
 → Uses list_frmr_documents
 
-"Show me the Key Security Indicators"
-→ Uses get_frmr_document with path 'FRMR.KSI.key-security-indicators.json'
+"Show me all KSI items for moderate impact systems"
+→ Uses filter_by_impact with impact='moderate'
 
-"What are the KSI categories?"
-→ Parses KSI document to show categories like IAM, CNA, MLA, etc.
+"Give me a summary of the IAM theme requirements"
+→ Uses get_theme_summary with theme='IAM'
+
+"What evidence do I need for IAM compliance?"
+→ Uses get_evidence_checklist with theme='IAM'
 ```
 
 **Searching Documentation:**
@@ -167,17 +202,23 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 "Search for information about continuous monitoring"
 → Uses search_markdown with query 'continuous monitoring'
 
-"Find guidance on incident response"
-→ Uses search_markdown with query 'incident response'
+"What does 'federal customer data' mean in FedRAMP?"
+→ Uses search_definitions with term='federal customer data'
+
+"Get the details for requirement KSI-IAM-01"
+→ Uses get_requirement_by_id with id='KSI-IAM-01'
 ```
 
 **Working with Controls:**
 ```
-"List all controls mapped in the MAS"
-→ Uses list_controls
+"What FedRAMP requirements map to control AY-01?"
+→ Uses get_control_requirements with control='AY-01'
+
+"Which control families have the most FedRAMP coverage?"
+→ Uses analyze_control_coverage
 
 "Find all markdown files that reference AC-2"
-→ Uses grep_controls_in_markdown with control 'AC-2'
+→ Uses grep_controls_in_markdown with control='AC-2'
 ```
 
 **Analyzing Changes:**
