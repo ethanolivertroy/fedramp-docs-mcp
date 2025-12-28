@@ -528,6 +528,18 @@ The repository includes a Claude Code plugin that provides slash commands, agent
 
 ### Quick Install
 
+In Claude Code, run:
+
+```
+/plugin marketplace add ethanolivertroy/fedramp-docs-mcp
+/plugin install fedramp-docs
+```
+
+That's it! The plugin is ready to use.
+
+<details>
+<summary>Alternative: Manual Installation</summary>
+
 ```bash
 # One-command setup
 npx fedramp-docs-mcp setup
@@ -536,11 +548,13 @@ npx fedramp-docs-mcp setup
 claude --plugin-dir ~/.fedramp-docs-mcp/plugin
 ```
 
-Or add an alias to your shell profile for convenience:
+Or add an alias to your shell profile:
 
 ```bash
 alias claude-fedramp='claude --plugin-dir ~/.fedramp-docs-mcp/plugin'
 ```
+
+</details>
 
 ### Available Commands
 

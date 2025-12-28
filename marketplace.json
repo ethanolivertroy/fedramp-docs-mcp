@@ -1,0 +1,12 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/npm/@anthropic-ai/claude-code-plugins-schema@latest/marketplace.schema.json",
+  "name": "fedramp-docs",
+  "description": "FedRAMP compliance toolkit for Claude Code",
+  "plugins": [
+    {
+      "name": "fedramp-docs",
+      "description": "FedRAMP compliance - search docs, analyze controls, track changes",
+      "source": "./plugin"
+    }
+  ]
+}
