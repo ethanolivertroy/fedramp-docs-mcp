@@ -26,22 +26,25 @@ A Claude Code plugin for FedRAMP compliance, documentation search, and control m
 
 ## Installation
 
-### Prerequisites
-
-Install the FedRAMP Docs MCP server:
+### Quick Install
 
 ```bash
-npm install -g fedramp-docs-mcp
+# One-command setup
+npx fedramp-docs-mcp setup
+
+# Start Claude Code with the plugin
+claude --plugin-dir ~/.fedramp-docs-mcp/plugin
 ```
 
-### Using the Plugin
+### Add Shell Alias (Recommended)
+
+Add this to your `.bashrc` or `.zshrc`:
 
 ```bash
-# Load plugin during Claude Code session
-claude --plugin-dir /path/to/fedramp-docs-mcp/plugin
-
-# Or add to your Claude Code settings
+alias claude-fedramp='claude --plugin-dir ~/.fedramp-docs-mcp/plugin'
 ```
+
+Then just run: `claude-fedramp`
 
 ## Supported Document Types
 

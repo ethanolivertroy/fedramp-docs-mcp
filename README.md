@@ -73,6 +73,24 @@ fedramp-docs-mcp
 
 **Note:** Global installation is required if you want to use `fedramp-docs-mcp` as the command in MCP client configurations (Claude Desktop, Goose, etc.). Alternatively, you can use the full path to the built server: `node /path/to/fedramp-docs-mcp/dist/index.js`
 
+### CLI Commands
+
+The package includes helpful CLI commands:
+
+```bash
+# Show help and usage information
+npx fedramp-docs-mcp help
+
+# Install Claude Code plugin
+npx fedramp-docs-mcp setup
+
+# Print MCP server configuration for Claude Desktop/Code
+npx fedramp-docs-mcp mcp-config
+
+# Start MCP server (used by MCP clients)
+npx fedramp-docs-mcp
+```
+
 During startup the server ensures a FedRAMP/docs repository is available, indexes FRMR JSON and markdown content, then begins serving requests on MCP stdio.
 
 ## Configuration
@@ -508,11 +526,20 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 The repository includes a Claude Code plugin that provides slash commands, agent skills, and a specialized compliance analyst agent.
 
-### Installation
+### Quick Install
 
 ```bash
-# Load plugin during Claude Code session
-claude --plugin-dir /path/to/fedramp-docs-mcp/plugin
+# One-command setup
+npx fedramp-docs-mcp setup
+
+# Then start Claude Code with the plugin
+claude --plugin-dir ~/.fedramp-docs-mcp/plugin
+```
+
+Or add an alias to your shell profile for convenience:
+
+```bash
+alias claude-fedramp='claude --plugin-dir ~/.fedramp-docs-mcp/plugin'
 ```
 
 ### Available Commands
