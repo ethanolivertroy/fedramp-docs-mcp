@@ -561,8 +561,15 @@ alias claude-fedramp='claude --plugin-dir ~/.fedramp-docs-mcp/plugin'
 | Command | Description |
 |---------|-------------|
 | `/fedramp-docs:search <query>` | Search FedRAMP documentation |
+| `/fedramp-docs:search-definitions <term>` | Search FedRAMP definitions |
 | `/fedramp-docs:list-controls [family]` | List NIST controls |
+| `/fedramp-docs:control-requirements <control>` | Get requirements for a NIST control |
+| `/fedramp-docs:control-coverage` | Analyze NIST control coverage |
 | `/fedramp-docs:list-ksi [filter]` | List Key Security Indicators |
+| `/fedramp-docs:filter-impact <level>` | Filter KSI by impact level |
+| `/fedramp-docs:theme-summary <theme>` | Get theme guidance |
+| `/fedramp-docs:evidence-checklist [theme]` | Get evidence checklist |
+| `/fedramp-docs:get-requirement <id>` | Get requirement by ID |
 | `/fedramp-docs:list-documents` | List all FRMR documents |
 | `/fedramp-docs:compare <doc1> <doc2>` | Compare document versions |
 | `/fedramp-docs:health` | Check MCP server status |

@@ -9,8 +9,15 @@ A Claude Code plugin for FedRAMP compliance, documentation search, and control m
 | Command | Description |
 |---------|-------------|
 | `/fedramp-docs:search <query>` | Search FedRAMP documentation |
+| `/fedramp-docs:search-definitions <term>` | Search FedRAMP definitions |
 | `/fedramp-docs:list-controls [family]` | List NIST controls |
+| `/fedramp-docs:control-requirements <control>` | Get all requirements for a NIST control |
+| `/fedramp-docs:control-coverage` | Analyze NIST control family coverage |
 | `/fedramp-docs:list-ksi [filter]` | List Key Security Indicators |
+| `/fedramp-docs:filter-impact <level>` | Filter KSI by impact (low/moderate/high) |
+| `/fedramp-docs:theme-summary <theme>` | Get comprehensive theme guidance |
+| `/fedramp-docs:evidence-checklist [theme]` | Get evidence checklist for compliance |
+| `/fedramp-docs:get-requirement <id>` | Get any requirement by ID |
 | `/fedramp-docs:list-documents` | List all FRMR documents |
 | `/fedramp-docs:compare <doc1> <doc2>` | Compare document versions |
 | `/fedramp-docs:health` | Check MCP server status |
