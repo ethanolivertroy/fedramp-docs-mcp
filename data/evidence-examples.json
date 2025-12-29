@@ -955,10 +955,23 @@
         {
           "type": "documentation",
           "description": "Incident response procedures",
+          "tip": "IR plan must cover detection, analysis, containment, eradication, recovery, and lessons learned. Include FedRAMP notification requirements (1 hour for significant incidents).",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc notifications list --organization=<org>", "description": "GCP SCC notification channels for incident alerting"},
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='severity=CRITICAL OR severity=ERROR'", "description": "GCP critical alerting policies"},
             {"provider": "manual", "artifact": "Incident Response Plan document"},
             {"provider": "pagerduty", "api": "/response_plays", "description": "PagerDuty response plays"},
             {"provider": "opsgenie", "api": "/v2/policies", "description": "Opsgenie escalation policies"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Incident detection and alerting",
+          "tip": "Automated detection should cover: unauthorized access attempts, malware, data exfiltration, DoS, and privilege escalation. Response should be automated where possible.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"ACTIVE\" AND severity=\"CRITICAL\"'", "description": "GCP SCC critical findings"},
+            {"provider": "crowdstrike", "api": "/detects/queries/detects/v1", "description": "CrowdStrike detection alerts"},
+            {"provider": "sentinel", "api": "/incidents", "description": "Azure Sentinel incidents"}
           ]
         }
       ]
@@ -969,10 +982,22 @@
         {
           "type": "log",
           "description": "Incident records",
+          "tip": "Every incident must be logged with: timeline, affected systems, root cause, containment actions, and resolution. Include severity classification and FedRAMP notification status.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'severity>=ERROR' --format='table(timestamp,resource.type,jsonPayload)' --limit=100", "description": "GCP error-level logs for incident correlation"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings?filter=state=\"ACTIVE\"", "description": "GCP SCC active findings"},
             {"provider": "servicenow", "api": "/api/now/table/incident", "description": "ServiceNow incidents"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=type=Incident", "description": "Jira incident tickets"},
             {"provider": "pagerduty", "api": "/incidents", "description": "PagerDuty incident history"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Incident metrics",
+          "tip": "Track MTTD (detect), MTTA (acknowledge), MTTR (resolve). Monitor incident volume trends. High-severity incidents should decrease over time.",
+          "sources": [
+            {"provider": "pagerduty", "api": "/analytics/metrics/incidents/all", "description": "PagerDuty incident analytics"},
+            {"provider": "manual", "artifact": "Incident metrics dashboard"}
           ]
         }
       ]
@@ -983,10 +1008,21 @@
         {
           "type": "documentation",
           "description": "Post-incident reviews",
+          "tip": "Every significant incident requires a blameless post-mortem within 5 business days. Document root cause, timeline, impact, and corrective actions. Track action item completion.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:\"scc\" AND severity>=WARNING' --format=json", "description": "GCP SCC activity during incident window"},
             {"provider": "manual", "artifact": "Post-mortem/After Action Report documents"},
             {"provider": "blameless", "api": "/api/v1/incidents/{id}/retrospective", "description": "Blameless retrospectives"},
             {"provider": "incidentio", "api": "/v2/post_incident_tasks", "description": "Incident.io follow-up tasks"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Post-incident action tracking",
+          "tip": "Track action item completion rate and time to completion. Recurring incidents indicate systemic issues. Root causes should be permanently addressed.",
+          "sources": [
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=post-mortem-action", "description": "JIRA post-mortem action items"},
+            {"provider": "manual", "artifact": "Action item completion report"}
           ]
         }
       ]
@@ -1220,10 +1256,24 @@
         {
           "type": "inventory",
           "description": "Real-time asset inventory",
+          "tip": "Inventory must be automated and real-time, not manual spreadsheets. Must capture all asset types: compute, storage, network, serverless, containers. Tag all assets with owner, classification, and environment.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-resources --scope=organizations/<org> --format='table(assetType,name,location,createTime)'", "description": "GCP Cloud Asset Inventory - all resources"},
+            {"provider": "gcp", "command": "gcloud asset search-all-resources --scope=organizations/<org> --asset-types='compute.googleapis.com/Instance' --format=json", "description": "GCP compute instances inventory"},
+            {"provider": "gcp", "api": "cloudasset.googleapis.com/v1/organizations/{org}/assets?contentType=RESOURCE", "description": "GCP Cloud Asset API - full inventory export"},
             {"provider": "aws", "command": "aws configservice list-discovered-resources --resource-type AWS::EC2::Instance", "description": "AWS Config discovered resources"},
             {"provider": "azure", "command": "az graph query -q 'Resources | summarize count() by type'", "description": "Azure Resource Graph inventory"},
             {"provider": "servicenow", "api": "/api/now/table/cmdb_ci", "description": "ServiceNow CMDB"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Inventory automation configuration",
+          "tip": "Configure Cloud Asset Inventory exports to run daily. Set up feeds for real-time change notifications. Ensure all projects are included in scope.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud asset feeds list --organization=<org>", "description": "GCP Cloud Asset feeds (real-time inventory updates)"},
+            {"provider": "gcp", "command": "gcloud asset export --organization=<org> --output-path=gs://<bucket>/inventory --content-type=resource", "description": "GCP scheduled inventory export configuration"},
+            {"provider": "aws", "command": "aws config describe-configuration-recorders", "description": "AWS Config recorder status"}
           ]
         }
       ]
@@ -1234,9 +1284,22 @@
         {
           "type": "documentation",
           "description": "Security requirements documentation",
+          "tip": "Security objectives must trace from NIST 800-53 controls to implementation. Document which controls are inherited vs CSP-implemented vs customer-configured.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc posture-deployments list --organization=<org>", "description": "GCP SCC security posture deployments"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP Security Health Analytics requirements"},
             {"provider": "manual", "artifact": "System Security Plan security objectives"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=security-requirement", "description": "Security requirements in Jira"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "Security requirements compliance",
+          "tip": "Track compliance percentage for each control family. Prioritize gaps in high-impact controls. Review quarterly.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"COMPLIANCE\"' --format='table(finding.category,finding.description,finding.state)'", "description": "GCP SCC compliance findings"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=sourceProperties.compliance_standard:*", "description": "GCP SCC compliance-mapped findings"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS Security Hub compliance failures"}
           ]
         }
       ]
@@ -1245,12 +1308,23 @@
       "name": "Vulnerability Disclosure Program",
       "evidence": [
         {
+          "type": "documentation",
+          "description": "VDP policy and security contact",
+          "tip": "Publish security.txt at /.well-known/security.txt per RFC 9116. Include contact email, PGP key, policy URL, and acknowledgments page. Respond to valid reports within 5 business days.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute url-maps describe <url-map> --format='value(defaultService)'", "description": "GCP URL map for security.txt hosting"},
+            {"provider": "manual", "artifact": "security.txt file and VDP policy"},
+            {"provider": "manual", "artifact": "Vulnerability disclosure policy document"}
+          ]
+        },
+        {
           "type": "report",
           "description": "VDP submissions and status",
+          "tip": "Track all vulnerability reports: time to acknowledge, time to triage, time to remediate. Target SLAs: acknowledge in 24 hours, triage in 5 days, remediate critical in 15 days.",
           "sources": [
             {"provider": "hackerone", "api": "/v1/reports", "description": "HackerOne reports"},
             {"provider": "bugcrowd", "api": "/submissions", "description": "Bugcrowd submissions"},
-            {"provider": "manual", "artifact": "security.txt file and VDP policy"}
+            {"provider": "manual", "artifact": "VDP metrics report (acknowledgment, triage, remediation times)"}
           ]
         }
       ]
@@ -1259,12 +1333,25 @@
       "name": "CISA Secure By Design",
       "evidence": [
         {
-          "type": "documentation",
-          "description": "Secure by Design practices",
+          "type": "configuration",
+          "description": "Secure-by-design pipeline controls",
+          "tip": "Implement CISA Secure by Design principles: memory-safe languages, eliminate default passwords, MFA by default, audit logging. Shift security left in SDLC.",
           "sources": [
-            {"provider": "manual", "artifact": "SDLC documentation with security integration"},
+            {"provider": "gcp", "command": "gcloud container binauthz policy export", "description": "GCP Binary Authorization policy (secure deployments)"},
+            {"provider": "gcp", "command": "gcloud artifacts repositories list --format='table(name,format,mode)'", "description": "GCP Artifact Registry repos (secure artifact storage)"},
+            {"provider": "gcp", "command": "gcloud builds triggers list --format='table(name,filename,substitutions)'", "description": "GCP Cloud Build triggers with security steps"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/code-scanning/alerts", "description": "GitHub code scanning alerts"},
             {"provider": "sonarqube", "api": "/api/issues/search", "description": "SonarQube security hotspots"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Secure SDLC practices",
+          "tip": "Document security requirements in design phase, threat modeling, security code review, automated security testing (SAST/DAST), and security sign-off for releases.",
+          "sources": [
+            {"provider": "manual", "artifact": "SDLC documentation with security integration"},
+            {"provider": "manual", "artifact": "Threat modeling templates and completed models"},
+            {"provider": "manual", "artifact": "Security release checklist"}
           ]
         }
       ]
@@ -1273,11 +1360,24 @@
       "name": "Evaluate Implementations",
       "evidence": [
         {
-          "type": "documentation",
-          "description": "Implementation evaluation methods",
+          "type": "report",
+          "description": "Security assessment results",
+          "tip": "Conduct penetration testing annually at minimum. Use independent assessors. Test both external and internal attack surfaces. Include social engineering and physical security if applicable.",
           "sources": [
-            {"provider": "manual", "artifact": "Security assessment methodology documentation"},
-            {"provider": "manual", "artifact": "Penetration test reports"}
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"VULNERABILITY\" OR category=\"MISCONFIGURATION\"' --format='table(finding.severity,finding.category,finding.name)'", "description": "GCP SCC vulnerability and misconfiguration findings"},
+            {"provider": "gcp", "api": "websecurityscanner.googleapis.com/v1/projects/{project}/scanConfigs/{scanConfig}/scanRuns", "description": "GCP Web Security Scanner results"},
+            {"provider": "manual", "artifact": "Penetration test reports"},
+            {"provider": "manual", "artifact": "Security assessment methodology documentation"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Automated security evaluation",
+          "tip": "Run automated assessments continuously. Include infrastructure-as-code scanning, container image scanning, and runtime security monitoring.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud scc sources list --organization=<org>", "description": "GCP SCC assessment sources configured"},
+            {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --show-occurrences --occurrence-filter='kind=\"VULNERABILITY\"'", "description": "GCP container vulnerability assessments"},
+            {"provider": "aws", "command": "aws inspector2 list-coverage", "description": "AWS Inspector coverage"}
           ]
         }
       ]
@@ -1287,10 +1387,23 @@
       "evidence": [
         {
           "type": "metrics",
-          "description": "Security metrics and KPIs",
+          "description": "Security program KPIs",
+          "tip": "Track ROI metrics: vulnerability density trends, MTTD/MTTR improvements, security incident costs, audit finding reduction. Compare to industry benchmarks.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --compare-duration=2592000s --filter='state=\"ACTIVE\"' --format='table(finding.category,stateChange)'", "description": "GCP SCC 30-day trend (new vs resolved findings)"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings:group?groupBy=category", "description": "GCP SCC findings grouped by category (trends)"},
             {"provider": "manual", "artifact": "Security metrics dashboard"},
             {"provider": "manual", "artifact": "Security program effectiveness reports"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "Security tool utilization",
+          "tip": "Demonstrate that security tools are actively used. Show alert volumes, investigation rates, and automation effectiveness. Unused tools indicate wasted investment.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud billing budgets list --billing-account=<account> --filter='displayName:security'", "description": "GCP security-related budget tracking"},
+            {"provider": "gcp", "command": "gcloud logging metrics list --format='table(name,filter)'", "description": "GCP security logging metrics defined"},
+            {"provider": "manual", "artifact": "Security tool utilization reports"}
           ]
         }
       ]
@@ -1299,12 +1412,25 @@
       "name": "Supply Chain Risk Management",
       "evidence": [
         {
-          "type": "report",
-          "description": "Software supply chain security",
+          "type": "inventory",
+          "description": "Software Bill of Materials (SBOM)",
+          "tip": "Generate SBOMs for all software in the boundary. Use SPDX or CycloneDX format. Include transitive dependencies. Regenerate on every build. Store and version SBOMs.",
           "sources": [
-            {"provider": "syft", "command": "syft <image> -o spdx-json", "description": "SBOM generation"},
-            {"provider": "grype", "command": "grype sbom:<sbom-file> -o json", "description": "SBOM vulnerability scan"},
+            {"provider": "gcp", "command": "gcloud artifacts sbom export --uri=<artifact-uri>", "description": "GCP Artifact Registry SBOM export"},
+            {"provider": "gcp", "api": "containeranalysis.googleapis.com/v1/projects/{project}/occurrences?filter=kind=\"SBOM\"", "description": "GCP Container Analysis SBOM occurrences"},
+            {"provider": "syft", "command": "syft <image> -o spdx-json", "description": "SBOM generation with Syft"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/dependency-graph/sbom", "description": "GitHub SBOM export"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Supply chain vulnerability scanning",
+          "tip": "Scan all dependencies for known vulnerabilities (CVEs). Block deployments with critical/high vulns. Require manual approval for medium. Update dependencies regularly.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --show-occurrences --occurrence-filter='kind=\"VULNERABILITY\"' --format=json", "description": "GCP Artifact Registry vulnerability scan results"},
+            {"provider": "gcp", "command": "gcloud container binauthz attestations list --artifact-url=<image>", "description": "GCP Binary Authorization attestations (supply chain verification)"},
+            {"provider": "grype", "command": "grype sbom:<sbom-file> -o json", "description": "SBOM vulnerability scan with Grype"},
+            {"provider": "snyk", "api": "/v1/org/{orgId}/dependencies", "description": "Snyk dependency vulnerabilities"}
           ]
         }
       ]
@@ -1315,9 +1441,22 @@
         {
           "type": "documentation",
           "description": "Executive security engagement",
+          "tip": "Demonstrate executive commitment: regular security briefings, budget allocation, security in strategic planning. Executive sponsor should sign off on risk acceptance decisions.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud organizations get-iam-policy <org> --flatten='bindings[].members' --filter='bindings.role:roles/securitycenter*' --format='table(bindings.role,bindings.members)'", "description": "GCP organization security role assignments"},
+            {"provider": "gcp", "command": "gcloud access-context-manager policies list --organization=<org>", "description": "GCP organization access policies (executive-level controls)"},
             {"provider": "manual", "artifact": "Security steering committee meeting minutes"},
             {"provider": "manual", "artifact": "Executive security briefing records"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "Executive security metrics",
+          "tip": "Provide executive-level dashboards showing security posture, risk trends, and compliance status. Monthly or quarterly reporting cadence recommended.",
+          "sources": [
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP organization security posture for executive reporting"},
+            {"provider": "manual", "artifact": "Board-level security reports"},
+            {"provider": "manual", "artifact": "Risk register with executive sign-off"}
           ]
         }
       ]
@@ -1328,9 +1467,22 @@
         {
           "type": "documentation",
           "description": "RTO/RPO definitions",
+          "tip": "Define RTO (Recovery Time Objective) and RPO (Recovery Point Objective) for each critical system. FedRAMP typically expects RTO < 24 hours for Moderate. Document justification for each objective.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute disks describe <disk> --format='table(name,replicaZones)'", "description": "GCP disk replication zones (affects RPO)"},
+            {"provider": "gcp", "command": "gcloud sql instances describe <instance> --format='table(settings.backupConfiguration)'", "description": "GCP Cloud SQL backup configuration (RPO indicator)"},
             {"provider": "manual", "artifact": "Business Impact Analysis with RTO/RPO"},
             {"provider": "manual", "artifact": "Disaster Recovery Plan"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Recovery configuration alignment",
+          "tip": "Technical configuration must support defined objectives. If RPO is 1 hour, backups must run at least hourly. If RTO is 4 hours, failover automation must be in place.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute instances describe <instance> --format='table(scheduling.automaticRestart,scheduling.onHostMaintenance)'", "description": "GCP VM automatic restart settings"},
+            {"provider": "gcp", "command": "gcloud compute instance-groups managed describe <mig> --format='table(autoHealingPolicies)'", "description": "GCP managed instance group auto-healing"},
+            {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{Name:DBInstanceIdentifier,MultiAZ:MultiAZ,BackupRetention:BackupRetentionPeriod}'", "description": "AWS RDS multi-AZ and backup settings"}
           ]
         }
       ]
@@ -1340,10 +1492,24 @@
       "evidence": [
         {
           "type": "documentation",
-          "description": "Recovery procedures",
+          "description": "Disaster recovery procedures",
+          "tip": "DR plan must include: trigger criteria, communication tree, recovery steps by system priority, rollback procedures, and success criteria. Update annually or after major changes.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud deployment-manager deployments list --format='table(name,operation.status)'", "description": "GCP Deployment Manager deployments (infrastructure-as-code for recovery)"},
+            {"provider": "gcp", "command": "gcloud compute snapshots list --format='table(name,sourceDisk,creationTimestamp,status)'", "description": "GCP disk snapshots available for recovery"},
             {"provider": "manual", "artifact": "Disaster Recovery Plan document"},
             {"provider": "manual", "artifact": "Business Continuity Plan"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Recovery infrastructure",
+          "tip": "Pre-provision recovery infrastructure or use infrastructure-as-code for rapid deployment. Document all dependencies and recovery order.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute regions list --format='table(name,status)'", "description": "GCP available regions for DR"},
+            {"provider": "gcp", "command": "gcloud container clusters list --format='table(name,location,status)'", "description": "GCP GKE clusters (multi-region availability)"},
+            {"provider": "terraform", "command": "terraform plan -var='environment=dr'", "description": "Terraform DR environment plan"},
+            {"provider": "aws", "command": "aws cloudformation describe-stacks --query 'Stacks[?contains(StackName,`dr`)].{Name:StackName,Status:StackStatus}'", "description": "AWS CloudFormation DR stacks"}
           ]
         }
       ]
@@ -1354,10 +1520,25 @@
         {
           "type": "report",
           "description": "Backup status and compliance",
+          "tip": "Backups must cover all data and configurations: databases, file storage, secrets, and infrastructure state. Verify backup completion daily. Test restore monthly.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud sql backups list --instance=<instance> --format='table(id,status,startTime,endTime)'", "description": "GCP Cloud SQL backup status"},
+            {"provider": "gcp", "command": "gcloud compute snapshots list --filter='creationTimestamp>2025-01-01' --format='table(name,sourceDisk,status,storageBytes)'", "description": "GCP compute disk snapshots"},
+            {"provider": "gcp", "command": "gcloud filestore backups list --format='table(name,sourceFileShare,state,createTime)'", "description": "GCP Filestore backups"},
             {"provider": "aws", "command": "aws backup list-backup-jobs --by-state COMPLETED", "description": "AWS Backup job status"},
             {"provider": "azure", "command": "az backup job list --resource-group <rg> --vault-name <vault>", "description": "Azure Backup jobs"},
             {"provider": "veeam", "api": "/api/v1/backupServers/{id}/sessions", "description": "Veeam backup sessions"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Backup policies and retention",
+          "tip": "Configure automated backup schedules aligned with RPO. Retain backups per data retention policy (typically 30 days operational, 1 year archive). Encrypt backups at rest.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud sql instances describe <instance> --format='json(settings.backupConfiguration)'", "description": "GCP Cloud SQL backup policy"},
+            {"provider": "gcp", "command": "gcloud compute resource-policies list --filter='snapshotSchedulePolicy:*' --format='table(name,snapshotSchedulePolicy)'", "description": "GCP snapshot schedule policies"},
+            {"provider": "gcp", "command": "gcloud storage buckets describe gs://<backup-bucket> --format='table(lifecycle,versioning)'", "description": "GCP backup bucket lifecycle/versioning"},
+            {"provider": "aws", "command": "aws backup list-backup-plans", "description": "AWS Backup plans"}
           ]
         }
       ]
@@ -1367,10 +1548,23 @@
       "evidence": [
         {
           "type": "report",
-          "description": "DR test results",
+          "description": "DR test execution and results",
+          "tip": "Test DR annually at minimum, quarterly recommended. Document test scope, procedures, results, and lessons learned. Verify RTO/RPO are achievable in practice.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud sql backups describe <backup-id> --instance=<instance>", "description": "GCP Cloud SQL backup details for restore testing"},
+            {"provider": "gcp", "command": "gcloud compute instances create <dr-test-vm> --source-snapshot=<snapshot>", "description": "GCP snapshot restore test"},
             {"provider": "manual", "artifact": "DR test execution records and results"},
-            {"provider": "aws", "command": "aws drs describe-recovery-instances", "description": "AWS Elastic Disaster Recovery status"},
+            {"provider": "aws", "command": "aws drs describe-recovery-instances", "description": "AWS Elastic Disaster Recovery status"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Recovery performance metrics",
+          "tip": "Track actual vs target RTO/RPO during tests. Measure time to detect failure, time to failover, and time to full recovery. Document any gaps and remediation plans.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring metrics list --filter='metric.type:uptime'", "description": "GCP uptime metrics for availability tracking"},
+            {"provider": "gcp", "api": "monitoring.googleapis.com/v3/projects/{project}/timeSeries?filter=metric.type=\"custom.googleapis.com/dr/recovery_time\"", "description": "GCP custom DR metrics"},
+            {"provider": "manual", "artifact": "DR test metrics report (actual RTO/RPO vs targets)"},
             {"provider": "manual", "artifact": "Chaos engineering experiment results"}
           ]
         }
