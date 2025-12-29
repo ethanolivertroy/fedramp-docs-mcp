@@ -10,7 +10,10 @@
         {
           "type": "documentation",
           "description": "System boundary documentation",
+          "tip": "Boundary must include all components that process, store, or transmit federal data. Include inherited controls from CSP. Document interconnections explicitly.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud organizations describe <org-id> --format='table(displayName,directoryCustomerId)'", "description": "GCP Organization structure"},
+            {"provider": "gcp", "command": "gcloud projects list --format='table(projectId,name,parent.id)'", "description": "GCP project inventory"},
             {"provider": "manual", "artifact": "System Security Plan (SSP) boundary diagrams"},
             {"provider": "aws", "command": "aws organizations describe-organization", "description": "AWS Organization structure"},
             {"provider": "azure", "command": "az account list --query '[].{name:name,id:id}'", "description": "Azure subscription inventory"}
@@ -19,7 +22,10 @@
         {
           "type": "inventory",
           "description": "Asset inventory within assessment scope",
+          "tip": "Every asset in the boundary must be inventoried with owner, classification, and function. Use tagging to identify in-scope vs out-of-scope resources.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-resources --scope=organizations/<org> --query='labels.fedramp:inscope'", "description": "GCP Cloud Asset Inventory with FedRAMP tags"},
+            {"provider": "gcp", "command": "gcloud compute instances list --format='table(name,zone,labels)'", "description": "GCP VM inventory with labels"},
             {"provider": "aws", "command": "aws resourcegroupstaggingapi get-resources --tag-filters Key=FedRAMP,Values=InScope", "description": "Tagged in-scope resources"},
             {"provider": "azure", "command": "az resource list --tag FedRAMP=InScope", "description": "Tagged Azure resources"}
           ]
@@ -32,9 +38,21 @@
         {
           "type": "report",
           "description": "KSI implementation tracking",
+          "tip": "All 72 KSIs must be addressed. Document implementation status, evidence sources, and any gaps. Review KSI status monthly and report quarterly.",
           "sources": [
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=category:*", "description": "GCP SCC findings mapped to KSIs"},
             {"provider": "manual", "artifact": "KSI compliance matrix with status for each indicator"},
-            {"provider": "api", "description": "This MCP server's analyze_control_coverage output"}
+            {"provider": "api", "description": "This MCP server's analyze_control_coverage output"},
+            {"provider": "manual", "artifact": "KSI gap analysis and remediation plan"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "KSI compliance metrics",
+          "tip": "Track percentage of KSIs fully implemented vs partial vs not started. Show improvement trend over time.",
+          "sources": [
+            {"provider": "manual", "artifact": "KSI dashboard with implementation percentages"},
+            {"provider": "api", "description": "This MCP server's get_theme_summary for each theme"}
           ]
         }
       ]
@@ -45,9 +63,21 @@
         {
           "type": "configuration",
           "description": "Data sharing agreements and configurations",
+          "tip": "Document all data sharing with other FedRAMP systems. Include interconnection security agreements (ISAs) for system-to-system connections.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --scope=organizations/<org> --query='policy.bindings.members:*' --format=json | jq '.[] | select(.policy.bindings[].members[] | contains(\"@\"))'", "description": "GCP cross-org IAM bindings"},
+            {"provider": "gcp", "command": "gcloud compute shared-vpc list-associated-resources <host-project>", "description": "GCP Shared VPC associations"},
             {"provider": "manual", "artifact": "Authorization Data Sharing (ADS) agreements"},
             {"provider": "aws", "command": "aws ram list-resources --resource-owner SELF", "description": "AWS Resource Access Manager shares"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Interconnection agreements",
+          "tip": "Each interconnection needs an ISA or MOU documenting security responsibilities, data types, and incident response procedures.",
+          "sources": [
+            {"provider": "manual", "artifact": "Interconnection Security Agreements (ISAs)"},
+            {"provider": "manual", "artifact": "Memoranda of Understanding (MOUs) for data sharing"}
           ]
         }
       ]
@@ -112,10 +142,22 @@
         {
           "type": "log",
           "description": "Change notification records",
+          "tip": "Significant changes require notification to FedRAMP within 30 days. Changes include: new services, major architecture changes, boundary modifications, or security-impacting updates.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"CreateDeployment\" OR \"UpdateDeployment\")' --format=json", "description": "GCP Deployment Manager changes"},
+            {"provider": "gcp", "command": "gcloud builds list --filter='status=SUCCESS' --format='table(id,createTime,source.repoSource.repoName)'", "description": "GCP Cloud Build deployments"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateChangeSet", "description": "CloudFormation changes"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/releases", "description": "Release notifications"},
             {"provider": "manual", "artifact": "Significant Change Request (SCR) log"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "SCR tracking",
+          "tip": "Maintain log of all Significant Change Requests with impact analysis, approval, and notification status. Include evidence of FedRAMP notification.",
+          "sources": [
+            {"provider": "manual", "artifact": "SCR register with dates and approvals"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=significant-change", "description": "JIRA SCR tickets"}
           ]
         }
       ]
@@ -126,9 +168,21 @@
         {
           "type": "report",
           "description": "Continuous monitoring reports",
+          "tip": "ConMon deliverables include monthly vulnerability scans, POA&M updates, and incident reports. Annual assessments must cover all controls. Collaborate with 3PAO on assessment schedule.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"ACTIVE\"' --format='table(finding.category,finding.severity,finding.createTime)'", "description": "GCP SCC active findings for ConMon"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings:group", "description": "GCP SCC findings grouped by category"},
             {"provider": "manual", "artifact": "Monthly/Quarterly ConMon reports"},
             {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "Security Hub compliance findings"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "ConMon metrics dashboard",
+          "tip": "Track POA&M aging, vulnerability trends, and control assessment status. Report on percentage of controls validated and any deferred assessments.",
+          "sources": [
+            {"provider": "manual", "artifact": "ConMon dashboard with KPIs"},
+            {"provider": "manual", "artifact": "POA&M aging report"}
           ]
         }
       ]
@@ -139,10 +193,22 @@
         {
           "type": "configuration",
           "description": "Secure configuration baselines",
+          "tip": "Document secure configuration recommendations for customer implementations. Include hardening guides, reference architectures, and secure defaults.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute project-info describe --format='value(commonInstanceMetadata.items)'", "description": "GCP project-level secure defaults"},
+            {"provider": "gcp", "command": "gcloud resource-manager org-policies list --organization=<org>", "description": "GCP Organization policies (security guardrails)"},
             {"provider": "aws", "command": "aws ssm list-documents --filters Key=DocumentType,Values=Package", "description": "SSM configuration documents"},
             {"provider": "cis", "artifact": "CIS Benchmark compliance reports"},
             {"provider": "manual", "artifact": "Secure Configuration Guide for customers"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Customer security guidance",
+          "tip": "Provide customers with clear security configuration guidance. Include shared responsibility matrix and recommended security settings.",
+          "sources": [
+            {"provider": "manual", "artifact": "Customer Security Configuration Guide"},
+            {"provider": "manual", "artifact": "Shared Responsibility Matrix"}
           ]
         }
       ]
@@ -153,9 +219,21 @@
         {
           "type": "configuration",
           "description": "Security inbox configuration",
+          "tip": "Dedicated security@company.com or fedramp-security@company.com inbox must be monitored 24/7. Response SLA: acknowledge within 24 hours, initial response within 48 hours.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='displayName:security-inbox'", "description": "GCP alerting for security inbox monitoring"},
             {"provider": "manual", "artifact": "Security inbox procedures and monitoring evidence"},
-            {"provider": "email", "description": "Security inbox activity logs (fedramp-security@company.com)"}
+            {"provider": "email", "description": "Security inbox activity logs (fedramp-security@company.com)"},
+            {"provider": "pagerduty", "api": "/services", "description": "PagerDuty escalation for security inbox"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Security inbox response tracking",
+          "tip": "Log all security inbox communications with timestamps, responders, and resolution. Track response time metrics.",
+          "sources": [
+            {"provider": "zendesk", "api": "/api/v2/tickets.json?query=type:ticket", "description": "Security ticket tracking"},
+            {"provider": "manual", "artifact": "Security inbox response log"}
           ]
         }
       ]
@@ -166,10 +244,22 @@
         {
           "type": "report",
           "description": "Automated compliance validation results",
+          "tip": "Implement continuous compliance monitoring. Automate control validation where possible. Alert on compliance drift. Annual 3PAO assessment validates ongoing compliance.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc posture-deployments list --organization=<org>", "description": "GCP Security Command Center posture deployments"},
+            {"provider": "gcp", "api": "securityposture.googleapis.com/v1/organizations/{org}/postureDeployments", "description": "GCP Security Posture API"},
             {"provider": "aws", "command": "aws configservice get-compliance-summary-by-config-rule", "description": "AWS Config compliance"},
             {"provider": "azure", "command": "az policy state summarize", "description": "Azure Policy compliance"},
             {"provider": "checkov", "command": "checkov -d . --output json", "description": "IaC compliance scan"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Control validation coverage",
+          "tip": "Track percentage of controls with automated validation vs manual. Goal is maximum automation. Report on validation frequency and results.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category:\"COMPLIANCE\"'", "description": "GCP compliance findings count"},
+            {"provider": "manual", "artifact": "Control automation coverage report"}
           ]
         }
       ]
@@ -180,9 +270,21 @@
         {
           "type": "documentation",
           "description": "Incident communication procedures",
+          "tip": "FedRAMP requires incident notification within 1 hour of detection for significant incidents. Document escalation paths to FedRAMP PMO and US-CERT.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'severity>=ERROR AND resource.type=\"project\"' --limit=10 --format=json", "description": "GCP security event logs"},
             {"provider": "manual", "artifact": "Incident Response Plan with FedRAMP ICP integration"},
-            {"provider": "pagerduty", "api": "/incidents", "description": "Incident notification records"}
+            {"provider": "pagerduty", "api": "/incidents", "description": "Incident notification records"},
+            {"provider": "manual", "artifact": "FedRAMP incident notification templates"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Incident communication records",
+          "tip": "Log all incident communications with timestamps. Include evidence of FedRAMP and US-CERT notifications for reportable incidents.",
+          "sources": [
+            {"provider": "manual", "artifact": "Incident communication log with FedRAMP notifications"},
+            {"provider": "opsgenie", "api": "/v2/incidents", "description": "OpsGenie incident records"}
           ]
         }
       ]
@@ -193,10 +295,22 @@
         {
           "type": "configuration",
           "description": "FIPS 140-2/3 module inventory",
+          "tip": "All cryptographic modules must be FIPS 140-2 or 140-3 validated. For FedRAMP High, use FIPS 140-3. Maintain inventory of all crypto modules with certificate numbers.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud kms keys list --location=<location> --keyring=<keyring> --format='table(name,purpose,algorithm)'", "description": "GCP Cloud KMS keys (FIPS 140-2 Level 3)"},
+            {"provider": "gcp", "command": "gcloud kms keys describe <key> --keyring=<ring> --location=<loc> --format='value(primary.protectionLevel)'", "description": "GCP KMS protection level (HSM = FIPS)"},
             {"provider": "aws", "command": "aws kms describe-key --key-id <key-id> --query 'KeyMetadata.KeySpec'", "description": "KMS key configuration"},
             {"provider": "manual", "artifact": "FIPS 140-2/3 validated module certificates"},
             {"provider": "openssl", "command": "openssl version -a", "description": "OpenSSL FIPS status"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Cryptographic module inventory",
+          "tip": "Document all FIPS modules in use: cloud KMS, HSMs, TLS libraries, encryption software. Include NIST CAVP certificate numbers.",
+          "sources": [
+            {"provider": "manual", "artifact": "FIPS module inventory with certificate numbers"},
+            {"provider": "nist", "artifact": "NIST CAVP certificate verification"}
           ]
         }
       ]
@@ -207,10 +321,21 @@
         {
           "type": "report",
           "description": "Security awareness training completion",
+          "tip": "All personnel must complete security awareness training within 30 days of onboarding and annually thereafter. Track completion rates - target is 100%.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=security-trained@<domain>", "description": "GCP Cloud Identity group for trained users"},
             {"provider": "knowbe4", "api": "/v1/training/enrollments", "description": "KnowBe4 training status"},
             {"provider": "workday", "api": "/learning/v1/completions", "description": "Workday Learning completions"},
             {"provider": "manual", "artifact": "LMS training completion report"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Training compliance metrics",
+          "tip": "Report on completion rates, overdue training, and phishing simulation results. Track improvement in phishing click rates over time.",
+          "sources": [
+            {"provider": "knowbe4", "api": "/v1/phishing/security_tests", "description": "KnowBe4 phishing test results"},
+            {"provider": "manual", "artifact": "Training compliance dashboard"}
           ]
         }
       ]
@@ -221,9 +346,12 @@
         {
           "type": "report",
           "description": "Role-based training completion for privileged users",
+          "tip": "Privileged users (admins, developers, security) need additional role-specific training. Document training requirements by role and track completion.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --query='policy.bindings.role:roles/owner OR policy.bindings.role:roles/editor' --format=json", "description": "GCP privileged users for training tracking"},
             {"provider": "manual", "artifact": "Privileged user training matrix"},
-            {"provider": "lms", "description": "Role-specific course completion records"}
+            {"provider": "lms", "description": "Role-specific course completion records"},
+            {"provider": "manual", "artifact": "Role-based training requirements document"}
           ]
         }
       ]
@@ -234,9 +362,21 @@
         {
           "type": "report",
           "description": "Secure development training",
+          "tip": "Developers must complete secure coding training (OWASP Top 10, secure SDLC) annually. Track training tied to code commit access.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud source repos list --format='table(name)'", "description": "GCP Cloud Source Repos (developers who need training)"},
             {"provider": "manual", "artifact": "OWASP/secure coding training records"},
-            {"provider": "github", "api": "/orgs/{org}/dependabot/alerts", "description": "Developer security alert acknowledgments"}
+            {"provider": "github", "api": "/orgs/{org}/dependabot/alerts", "description": "Developer security alert acknowledgments"},
+            {"provider": "snyk", "api": "/org/{orgId}/audit", "description": "Snyk developer activity (training triggers)"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Training-gated access",
+          "tip": "Consider requiring completed security training before granting commit access to production repositories.",
+          "sources": [
+            {"provider": "github", "api": "/orgs/{org}/teams", "description": "GitHub team membership (training-gated)"},
+            {"provider": "manual", "artifact": "Access control policy requiring training completion"}
           ]
         }
       ]
@@ -247,9 +387,21 @@
         {
           "type": "report",
           "description": "IR/DR training and drill participation",
+          "tip": "IR/DR team members must participate in tabletop exercises at least annually. Document drill scenarios, participants, lessons learned, and action items.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='userLabels.drill:true'", "description": "GCP alert policies used in DR drills"},
             {"provider": "manual", "artifact": "Tabletop exercise attendance records"},
-            {"provider": "manual", "artifact": "DR drill participation logs"}
+            {"provider": "manual", "artifact": "DR drill participation logs"},
+            {"provider": "pagerduty", "api": "/oncalls", "description": "PagerDuty on-call roster (IR team)"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Drill lessons learned",
+          "tip": "Document lessons learned from each drill. Track remediation of identified gaps. Use findings to improve IR/DR procedures.",
+          "sources": [
+            {"provider": "manual", "artifact": "Tabletop exercise after-action reports"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=drill-action-item", "description": "JIRA drill action items"}
           ]
         }
       ]
@@ -260,10 +412,22 @@
         {
           "type": "log",
           "description": "Change audit logs",
+          "tip": "All infrastructure and application changes must be logged with who, what, when, and why. Enable immutable audit logging. Alert on unauthorized or unexpected changes.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"insert\" OR \"update\" OR \"delete\" OR \"patch\" OR \"create\")' --format=json", "description": "GCP Admin Activity audit logs"},
+            {"provider": "gcp", "command": "gcloud logging read 'logName:\"logs/cloudaudit.googleapis.com%2Factivity\"' --format='table(timestamp,protoPayload.methodName,protoPayload.authenticationInfo.principalEmail)'", "description": "GCP Cloud Audit activity"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --start-time <date> --end-time <date>", "description": "CloudTrail change events"},
             {"provider": "azure", "command": "az monitor activity-log list --start-time <date>", "description": "Azure Activity Log"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/commits", "description": "Git commit history"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Change monitoring alerts",
+          "tip": "Configure alerts for high-risk changes: IAM policy modifications, network rule changes, encryption settings, and security group updates.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='displayName:*change*'", "description": "GCP change monitoring alerts"},
+            {"provider": "aws", "command": "aws cloudwatch describe-alarms --alarm-name-prefix security", "description": "AWS security change alarms"}
           ]
         }
       ]
@@ -274,10 +438,22 @@
         {
           "type": "configuration",
           "description": "Immutable infrastructure deployment evidence",
+          "tip": "Changes should result in new deployments, not in-place modifications. Use blue-green or canary deployments. Rollback capability is essential.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud run revisions list --format='table(name,status,createTime)'", "description": "GCP Cloud Run revisions (immutable deployments)"},
+            {"provider": "gcp", "command": "gcloud container clusters get-credentials <cluster> && kubectl rollout history deployment/<name>", "description": "GKE deployment rollout history"},
             {"provider": "argocd", "api": "/api/v1/applications", "description": "ArgoCD deployment history"},
             {"provider": "aws", "command": "aws ecs describe-services --cluster <cluster> --services <service>", "description": "ECS deployment configuration"},
             {"provider": "terraform", "command": "terraform state list", "description": "Terraform managed resources"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Deployment success metrics",
+          "tip": "Track deployment frequency, success rate, and rollback frequency. Failed deployments should auto-rollback. Mean time to recovery (MTTR) should be minutes.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud deploy releases list --delivery-pipeline=<pipeline> --format='table(name,renderState,createTime)'", "description": "GCP Cloud Deploy release history"},
+            {"provider": "datadog", "api": "/api/v1/events", "description": "Datadog deployment events"}
           ]
         }
       ]
@@ -288,10 +464,22 @@
         {
           "type": "report",
           "description": "CI/CD pipeline test results",
+          "tip": "All changes must pass automated tests before deployment. Include unit tests, integration tests, security scans, and compliance checks. Block deployments on test failures.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud builds list --format='table(id,status,createTime,source.repoSource.repoName)'", "description": "GCP Cloud Build pipeline runs"},
+            {"provider": "gcp", "command": "gcloud builds describe <build-id> --format='value(results.images,results.buildStepImages)'", "description": "GCP Cloud Build results"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/actions/runs", "description": "GitHub Actions workflow runs"},
             {"provider": "gitlab", "api": "/projects/{id}/pipelines", "description": "GitLab CI pipeline history"},
             {"provider": "jenkins", "api": "/job/{name}/api/json", "description": "Jenkins build history"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Pipeline security gates",
+          "tip": "Require security scan pass, code review approval, and test coverage thresholds before merge. Document bypass procedures for emergencies.",
+          "sources": [
+            {"provider": "github", "api": "/repos/{owner}/{repo}/branches/{branch}/protection", "description": "GitHub branch protection rules"},
+            {"provider": "gcp", "command": "gcloud deploy delivery-pipelines describe <pipeline> --format='value(serialPipeline.stages)'", "description": "GCP Cloud Deploy pipeline stages"}
           ]
         }
       ]
@@ -302,10 +490,21 @@
         {
           "type": "documentation",
           "description": "Change management records",
+          "tip": "All changes require a change request with impact analysis, approval, and testing plan. CAB reviews high-risk changes. Document change window and rollback plan.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.request.@type:\"type.googleapis.com/google.iam.admin.v1.CreateRoleRequest\"' --format=json", "description": "GCP role change requests"},
             {"provider": "servicenow", "api": "/api/now/table/change_request", "description": "ServiceNow change requests"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=type=Change", "description": "Jira change tickets"},
             {"provider": "manual", "artifact": "Change Advisory Board (CAB) meeting minutes"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Change success metrics",
+          "tip": "Track change success rate, failed changes, and unplanned changes. High failure rate indicates process issues. Target >95% success rate.",
+          "sources": [
+            {"provider": "servicenow", "api": "/api/now/stats/change_request", "description": "ServiceNow change metrics"},
+            {"provider": "manual", "artifact": "Change management dashboard"}
           ]
         }
       ]
@@ -316,9 +515,21 @@
         {
           "type": "documentation",
           "description": "Emergency change procedures and logs",
+          "tip": "Emergency changes bypass normal approval but require post-implementation review within 24-48 hours. Document justification, authorization, and retrospective.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.authorizationInfo.granted=true AND severity>=WARNING' --format=json", "description": "GCP emergency access grants"},
             {"provider": "servicenow", "api": "/api/now/table/change_request?sysparm_query=type=emergency", "description": "Emergency change records"},
-            {"provider": "manual", "artifact": "Emergency change authorization logs"}
+            {"provider": "manual", "artifact": "Emergency change authorization logs"},
+            {"provider": "pagerduty", "api": "/incidents?statuses[]=resolved", "description": "PagerDuty incidents triggering emergency changes"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Emergency change tracking",
+          "tip": "Track frequency of emergency changes. High rate indicates systemic issues. Each emergency change should have a follow-up to prevent recurrence.",
+          "sources": [
+            {"provider": "manual", "artifact": "Emergency change frequency report"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=emergency-change", "description": "Emergency change follow-up tickets"}
           ]
         }
       ]
@@ -1465,9 +1676,23 @@
         {
           "type": "inventory",
           "description": "Third-party service inventory",
+          "tip": "Maintain complete inventory of all third-party services, APIs, and SaaS. Include data classification for each (what data they access). FedRAMP requires vendors to be authorized or have equivalent security.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud services list --enabled --format='table(config.name,config.title)'", "description": "GCP enabled APIs (third-party integrations)"},
+            {"provider": "gcp", "command": "gcloud iam service-accounts list --filter='email:*gserviceaccount.com' --format='table(email,displayName)'", "description": "GCP service accounts (potential third-party access)"},
             {"provider": "manual", "artifact": "Third-party vendor inventory"},
-            {"provider": "manual", "artifact": "Vendor risk assessments"}
+            {"provider": "manual", "artifact": "Vendor risk assessments"},
+            {"provider": "saasops", "api": "/api/v1/applications", "description": "SaaS management platform inventory"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Third-party security documentation",
+          "tip": "For each critical vendor: SOC 2 Type II, FedRAMP authorization status, data processing agreements, and incident notification SLAs.",
+          "sources": [
+            {"provider": "manual", "artifact": "Vendor SOC 2 reports"},
+            {"provider": "manual", "artifact": "Data Processing Agreements (DPAs)"},
+            {"provider": "fedramp", "artifact": "FedRAMP Marketplace authorization status"}
           ]
         }
       ]
@@ -1478,9 +1703,22 @@
         {
           "type": "configuration",
           "description": "Third-party access controls",
+          "tip": "Third-party access should follow least privilege. Use dedicated service accounts, not shared credentials. Implement JIT access where possible. Review and recertify quarterly.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --query='policy.bindings.members:*@*.iam.gserviceaccount.com' --format=json", "description": "GCP IAM bindings with external service accounts"},
+            {"provider": "gcp", "command": "gcloud iam workload-identity-pools list --location=global --format='table(name,state)'", "description": "GCP Workload Identity pools (external identity federation)"},
             {"provider": "aws", "command": "aws iam list-roles --query 'Roles[?contains(AssumeRolePolicyDocument,`sts:AssumeRole`)]'", "description": "Cross-account IAM roles"},
-            {"provider": "okta", "api": "/api/v1/apps", "description": "Third-party app integrations"}
+            {"provider": "okta", "api": "/api/v1/apps", "description": "Third-party app integrations"},
+            {"provider": "azure", "command": "az ad sp list --filter=\"servicePrincipalType eq 'Application'\" --query '[].{name:displayName,id:appId}'", "description": "Azure third-party service principals"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Third-party access audit",
+          "tip": "Monitor all third-party access activity. Alert on unusual patterns or access outside expected hours. Track data accessed by each vendor.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.authenticationInfo.principalEmail:*gserviceaccount.com' --format=json", "description": "GCP service account activity logs"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=<third-party-role>", "description": "AWS third-party role activity"}
           ]
         }
       ]
@@ -1491,10 +1729,22 @@
         {
           "type": "report",
           "description": "Vendor security assessments",
+          "tip": "Assess vendors based on data sensitivity and criticality. Critical vendors need annual security reviews. Use standardized questionnaires (SIG, CAIQ) for consistency.",
           "sources": [
+            {"provider": "gcp", "api": "assuredworkloads.googleapis.com/v1/organizations/{org}/locations/{location}/workloads", "description": "GCP Assured Workloads compliance status"},
             {"provider": "securityscorecard", "api": "/portfolios/{id}/companies", "description": "SecurityScorecard vendor ratings"},
             {"provider": "bitsight", "api": "/ratings/v1/companies", "description": "BitSight vendor ratings"},
-            {"provider": "manual", "artifact": "Vendor security questionnaire responses"}
+            {"provider": "manual", "artifact": "Vendor security questionnaire responses"},
+            {"provider": "manual", "artifact": "Vendor SOC 2 Type II reports"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Vendor risk metrics",
+          "tip": "Track vendor risk scores over time. Require remediation plans for vendors below threshold. Report on percentage of vendors with current assessments.",
+          "sources": [
+            {"provider": "securityscorecard", "api": "/portfolios/{id}/scores/history", "description": "SecurityScorecard score history"},
+            {"provider": "manual", "artifact": "Vendor risk dashboard"}
           ]
         }
       ]
@@ -1505,10 +1755,24 @@
         {
           "type": "scan",
           "description": "Dependency vulnerability monitoring",
+          "tip": "Scan all dependencies continuously. Block builds with critical vulnerabilities. Generate SBOMs for all releases. Track transitive dependencies.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --include-tags --show-occurrences", "description": "GCP Artifact Registry vulnerability occurrences"},
+            {"provider": "gcp", "api": "containeranalysis.googleapis.com/v1/projects/{project}/occurrences?filter=kind=\"PACKAGE_VULNERABILITY\"", "description": "GCP Container Analysis vulnerabilities"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/dependabot/alerts", "description": "Dependabot alerts"},
             {"provider": "snyk", "api": "/org/{orgId}/projects", "description": "Snyk project vulnerabilities"},
-            {"provider": "dependencycheck", "command": "dependency-check --scan . --format JSON", "description": "OWASP Dependency-Check scan"}
+            {"provider": "dependencycheck", "command": "dependency-check --scan . --format JSON", "description": "OWASP Dependency-Check scan"},
+            {"provider": "syft", "command": "syft <image> -o spdx-json", "description": "Syft SBOM generation"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Software Bill of Materials (SBOM)",
+          "tip": "Generate SBOM for every release. Include all direct and transitive dependencies. Store SBOMs for incident response and vulnerability triage.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud artifacts sbom export --uri=<image>", "description": "GCP Artifact Registry SBOM export"},
+            {"provider": "cyclonedx", "command": "cyclonedx-cli analyze --input-file <manifest>", "description": "CycloneDX SBOM"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/dependency-graph/sbom", "description": "GitHub SBOM export"}
           ]
         }
       ]
