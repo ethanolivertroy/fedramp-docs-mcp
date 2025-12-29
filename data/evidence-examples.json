@@ -1171,9 +1171,21 @@
         {
           "type": "documentation",
           "description": "Security improvement tracking",
+          "tip": "Demonstrate ongoing security maturity improvements. Track POA&M closures, vulnerability reduction trends, and security control enhancements over time.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"INACTIVE\"' --format='table(finding.category,finding.eventTime)'", "description": "GCP SCC resolved findings (improvements)"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=security-improvement", "description": "Security improvement tickets"},
-            {"provider": "manual", "artifact": "Security roadmap and improvement plans"}
+            {"provider": "manual", "artifact": "Security roadmap and improvement plans"},
+            {"provider": "manual", "artifact": "POA&M closure reports"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Security posture improvement metrics",
+          "tip": "Show measurable improvement: fewer vulnerabilities, faster remediation, better coverage. Compare current state to baseline from 6-12 months ago.",
+          "sources": [
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP Security Health Analytics posture"},
+            {"provider": "qualys", "api": "/api/2.0/fo/report/scorecards/", "description": "Qualys security scorecard trends"}
           ]
         }
       ]
@@ -1184,10 +1196,23 @@
         {
           "type": "scan",
           "description": "TLS/encryption configuration",
+          "tip": "Minimum TLS 1.2 required, TLS 1.3 preferred. Verify no weak ciphers (RC4, DES, export ciphers). Certificate chains must be valid and not expiring soon.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute ssl-policies list --format='table(name,minTlsVersion,profile)'", "description": "GCP SSL policies with TLS version"},
+            {"provider": "gcp", "command": "gcloud compute target-https-proxies list --format='table(name,sslPolicy)'", "description": "GCP HTTPS proxies SSL policy assignment"},
             {"provider": "ssllabs", "api": "/api/v3/analyze?host=<domain>", "description": "SSL Labs scan results"},
             {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"},
             {"provider": "aws", "command": "aws elbv2 describe-listeners --load-balancer-arn <arn> --query 'Listeners[].{Port:Port,Protocol:Protocol}'", "description": "Load balancer TLS configuration"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Internal service encryption",
+          "tip": "Internal service-to-service communication should also use TLS/mTLS. Verify mesh encryption if using service mesh. Check for any plaintext internal traffic.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute backend-services describe <service> --format='value(securitySettings)'", "description": "GCP backend service security settings"},
+            {"provider": "istio", "command": "istioctl analyze --all-namespaces", "description": "Istio mTLS analysis"},
+            {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o yaml", "description": "Kubernetes mTLS policies"}
           ]
         }
       ]
@@ -1198,10 +1223,23 @@
         {
           "type": "configuration",
           "description": "Data-at-rest encryption",
+          "tip": "All data stores must be encrypted. Use customer-managed keys (CMEK) for FedRAMP High. Verify encryption covers databases, file storage, backups, and logs.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud sql instances list --format='table(name,settings.ipConfiguration.requireSsl,settings.dataDiskSizeGb)'", "description": "GCP Cloud SQL encryption (default encrypted)"},
+            {"provider": "gcp", "command": "gcloud storage buckets describe gs://<bucket> --format='value(encryption)'", "description": "GCP Cloud Storage CMEK configuration"},
+            {"provider": "gcp", "command": "gcloud kms keys list --location=<location> --keyring=<keyring> --format='table(name,purpose,primary.state)'", "description": "GCP Cloud KMS keys"},
             {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{id:DBInstanceIdentifier,encrypted:StorageEncrypted}'", "description": "RDS encryption status"},
             {"provider": "aws", "command": "aws s3api get-bucket-encryption --bucket <bucket>", "description": "S3 encryption configuration"},
             {"provider": "azure", "command": "az storage account show --name <account> --query 'encryption'", "description": "Azure storage encryption"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Data store encryption inventory",
+          "tip": "Maintain inventory of all data stores with encryption status. Any unencrypted data store is a compliance gap. Include ephemeral storage and caches.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-resources --asset-types='sqladmin.googleapis.com/Instance,storage.googleapis.com/Bucket,compute.googleapis.com/Disk'", "description": "GCP data store inventory"},
+            {"provider": "aws", "command": "aws resourcegroupstaggingapi get-resources --tag-filters Key=DataClassification", "description": "AWS tagged data resources"}
           ]
         }
       ]
@@ -1212,10 +1250,24 @@
         {
           "type": "configuration",
           "description": "Configuration management automation",
+          "tip": "100% of systems should be under configuration management. No manual configuration changes. Verify drift detection is enabled and alerts on changes.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instances list --format='table(name,metadata.items[0].value)'", "description": "GCP VM metadata (startup scripts)"},
+            {"provider": "gcp", "command": "gcloud deployment-manager deployments list --format='table(name,operation.status)'", "description": "GCP Deployment Manager deployments"},
+            {"provider": "gcp", "command": "gcloud config configurations list", "description": "GCP config configurations"},
             {"provider": "ansible", "command": "ansible-inventory --list", "description": "Ansible managed inventory"},
             {"provider": "aws", "command": "aws ssm describe-instance-information", "description": "SSM managed instances"},
             {"provider": "puppet", "api": "/pdb/query/v4/nodes", "description": "Puppet managed nodes"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Configuration drift detection",
+          "tip": "Monitor for configuration drift. Any manual changes should be flagged and reverted. Track compliance percentage over time.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"compute.instances.setMetadata\" OR \"compute.instances.setTags\")' --format=json", "description": "GCP VM configuration change audit"},
+            {"provider": "aws", "command": "aws config get-compliance-details-by-config-rule --config-rule-name <rule>", "description": "AWS Config compliance details"},
+            {"provider": "chef", "api": "/compliance/reporting/nodes", "description": "Chef InSpec compliance reports"}
           ]
         }
       ]
@@ -1226,10 +1278,25 @@
         {
           "type": "scan",
           "description": "File and resource integrity monitoring",
+          "tip": "FIM should cover critical system files, binaries, and configurations. Alert on any unexpected changes. Container images should be immutable and verified with signatures.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instances describe <instance> --format='value(shieldedInstanceConfig)'", "description": "GCP Shielded VM integrity monitoring"},
+            {"provider": "gcp", "command": "gcloud container images describe <image> --format='value(image_summary.fully_qualified_digest)'", "description": "GCP container image digest verification"},
+            {"provider": "gcp", "api": "binaryauthorization.googleapis.com/v1/projects/{project}/policy", "description": "GCP Binary Authorization policy"},
             {"provider": "aws", "command": "aws configservice get-resource-config-history --resource-type AWS::EC2::Instance --resource-id <id>", "description": "AWS Config resource history"},
             {"provider": "tripwire", "api": "/api/v1/elements", "description": "Tripwire element status"},
-            {"provider": "ossec", "artifact": "OSSEC syscheck reports"}
+            {"provider": "ossec", "artifact": "OSSEC syscheck reports"},
+            {"provider": "sigstore", "command": "cosign verify <image>", "description": "Sigstore container signature verification"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Integrity violation alerts",
+          "tip": "Track integrity alerts over time. Any alert should trigger investigation. Repeated alerts on same resource indicate potential compromise or misconfiguration.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"gce_instance\" AND jsonPayload.event_type=\"integrity_violation\"'", "description": "GCP Shielded VM integrity violation logs"},
+            {"provider": "aws", "command": "aws guardduty list-findings --detector-id <id> --finding-criteria '{\"Criterion\":{\"type\":{\"Eq\":[\"Persistence:IAMUser/UserPermissions\"]}}}'", "description": "AWS GuardDuty persistence findings"},
+            {"provider": "crowdstrike", "api": "/detects/queries/detects/v1", "description": "CrowdStrike detection events"}
           ]
         }
       ]
@@ -1291,10 +1358,23 @@
         {
           "type": "report",
           "description": "Patch compliance status",
+          "tip": "FedRAMP patch SLAs: Critical within 30 days, High within 30 days, Moderate within 90 days. Track percentage of systems at 100% compliance. Containerized workloads need image update tracking.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instances os-inventory list-instances --format='table(instance,shortName,installedPackages)'", "description": "GCP OS inventory for patch status"},
+            {"provider": "gcp", "command": "gcloud container images list-tags <image> --format='table(digest,timestamp)'", "description": "GCP container image update history"},
             {"provider": "aws", "command": "aws ssm describe-instance-patch-states", "description": "SSM Patch Manager status"},
             {"provider": "azure", "command": "az vm assess-patches --resource-group <rg> --name <vm>", "description": "Azure Update Manager assessment"},
             {"provider": "qualys", "api": "/api/2.0/fo/scan/compliance/", "description": "Qualys patch compliance"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Patch SLA compliance metrics",
+          "tip": "Track Mean Time to Patch (MTTP) by severity. Report on percentage meeting SLA and any exceptions. Show trending improvement over time.",
+          "sources": [
+            {"provider": "gcp", "api": "osconfig.googleapis.com/v1/projects/{project}/patchJobs", "description": "GCP OS Config patch job history"},
+            {"provider": "tenable", "api": "/workbenches/assets", "description": "Tenable asset patch status"},
+            {"provider": "manual", "artifact": "Patch compliance dashboard with SLA tracking"}
           ]
         }
       ]
@@ -1305,9 +1385,23 @@
         {
           "type": "configuration",
           "description": "Multi-tenant isolation configuration",
+          "tip": "Verify strong isolation between tenants. GCP uses projects, AWS uses accounts, K8s uses namespaces+NetworkPolicies. Shared resources need additional controls.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud projects list --format='table(projectId,parent)'", "description": "GCP project hierarchy (isolation boundary)"},
+            {"provider": "gcp", "command": "gcloud resource-manager folders list --organization=<org>", "description": "GCP folder structure for tenant isolation"},
+            {"provider": "gcp", "command": "gcloud compute sole-tenancy node-templates list", "description": "GCP sole-tenant nodes (dedicated hardware)"},
             {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[].{id:InstanceId,tenancy:Placement.Tenancy}'", "description": "EC2 tenancy configuration"},
-            {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o json", "description": "Kubernetes network policies for isolation"}
+            {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o json", "description": "Kubernetes network policies for isolation"},
+            {"provider": "kubernetes", "command": "kubectl get resourcequotas --all-namespaces -o yaml", "description": "Kubernetes resource quotas per namespace"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Tenant isolation architecture",
+          "tip": "Document isolation boundaries between tenants. Include network, compute, storage, and data isolation. Shared services should be explicitly called out with additional controls.",
+          "sources": [
+            {"provider": "manual", "artifact": "Multi-tenancy architecture diagram"},
+            {"provider": "manual", "artifact": "Shared services risk assessment"}
           ]
         }
       ]
@@ -1318,10 +1412,23 @@
         {
           "type": "configuration",
           "description": "Service-to-service communication security",
+          "tip": "All internal service communication should use mTLS. Verify mutual authentication (both sides validate certificates). Check for any plaintext internal traffic.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute backend-services list --format='table(name,protocol,securitySettings)'", "description": "GCP backend service security settings"},
+            {"provider": "gcp", "command": "gcloud anthos auth describe <membership>", "description": "GCP Anthos service mesh mTLS status"},
             {"provider": "istio", "command": "istioctl proxy-config cluster <pod>", "description": "Istio service mesh mTLS"},
             {"provider": "aws", "command": "aws appmesh describe-virtual-service --mesh-name <mesh> --virtual-service-name <svc>", "description": "App Mesh TLS configuration"},
-            {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o json", "description": "Istio PeerAuthentication policies"}
+            {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o json", "description": "Istio PeerAuthentication policies"},
+            {"provider": "linkerd", "command": "linkerd viz stat deploy -n <namespace>", "description": "Linkerd mTLS status"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Internal traffic encryption verification",
+          "tip": "Periodically verify no plaintext internal traffic. Network captures should show only encrypted payloads between services.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute packet-mirrorings list", "description": "GCP packet mirroring for traffic analysis"},
+            {"provider": "istio", "command": "istioctl analyze --all-namespaces", "description": "Istio configuration analysis for mTLS gaps"}
           ]
         }
       ]
@@ -1332,10 +1439,22 @@
         {
           "type": "log",
           "description": "Data deletion records",
+          "tip": "Maintain audit trail of all data deletion requests and completions. Include requestor, approval, execution, and verification. Cryptographic erasure may be used for encrypted data.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"storage.objects.delete\" OR \"bigquery.tables.delete\")' --format=json", "description": "GCP data deletion audit logs"},
+            {"provider": "gcp", "command": "gcloud kms keys versions destroy <version> --key=<key> --keyring=<ring> --location=<location>", "description": "GCP crypto-shredding via key destruction"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteObject", "description": "S3 deletion events"},
             {"provider": "manual", "artifact": "Data destruction certificates"},
             {"provider": "manual", "artifact": "Customer data deletion request logs"}
+          ]
+        },
+        {
+          "type": "documentation",
+          "description": "Data destruction procedures",
+          "tip": "Document data destruction procedures including media sanitization, verification, and certificate issuance. Procedures should cover all data locations including backups.",
+          "sources": [
+            {"provider": "manual", "artifact": "Data destruction policy and procedures"},
+            {"provider": "manual", "artifact": "Backup data retention and destruction schedule"}
           ]
         }
       ]
