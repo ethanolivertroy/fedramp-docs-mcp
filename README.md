@@ -248,6 +248,58 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 → Uses get_significant_change_guidance
 ```
 
+### Advanced Queries: Dashboard & Architecture Insights
+
+These prompts combine FedRAMP data with Claude's analytical capabilities to help you design compliance dashboards and features:
+
+**Dashboard Architecture:**
+```
+"Using the FedRAMP KSI data, design a compliance dashboard architecture.
+What components would I need? How should I structure the data for real-time monitoring?"
+
+"Get all KSI themes and their indicators. Then recommend how to organize
+them into a dashboard with drill-down navigation."
+```
+
+**Visualization Design:**
+```
+"Analyze the FedRAMP control coverage data. What would be the best
+chart types to visualize control family coverage? Suggest a color
+scheme for compliance status."
+
+"List the KSIs filtered by impact level. Design a risk heat map
+visualization showing low/moderate/high impact requirements."
+```
+
+**Feature Planning:**
+```
+"Get the evidence checklist from FedRAMP. How would you build a
+feature that tracks evidence collection progress with percentage
+completion per KSI theme?"
+
+"What are the requirements for AC-2 (Account Management)? Design a
+feature that helps users track their implementation status against
+these requirements."
+```
+
+**Data Modeling:**
+```
+"Analyze the structure of KSI indicators and their control mappings.
+What database schema would you recommend for a compliance tracking app?"
+
+"Get a theme summary for IAM. How would you model the relationship
+between KSIs, NIST controls, and evidence in a graph database?"
+```
+
+**Executive Reporting:**
+```
+"Using the control coverage analysis, design an executive summary
+dashboard that shows compliance posture at a glance."
+
+"Analyze all high-impact KSI requirements and create a prioritized
+remediation roadmap template."
+```
+
 ## MCP Client Configuration
 
 The FedRAMP Docs MCP server works with any MCP-compatible client. Below are setup instructions for the most popular and reliable clients.
