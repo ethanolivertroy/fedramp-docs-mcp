@@ -25,6 +25,7 @@
   ],
   "files": [
     "dist",
+    "data",
     "plugin",
     "README.md",
     "LICENSE"

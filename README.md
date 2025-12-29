@@ -164,7 +164,7 @@ The server provides 20 tools organized into categories. All tools follow the err
 | `get_ksi` | Get a specific KSI item by ID |
 | `filter_by_impact` | Filter KSI items by impact level (low/moderate/high) |
 | `get_theme_summary` | Get comprehensive guidance for a KSI theme (IAM, CNA, etc.) |
-| `get_evidence_checklist` | Collect evidence examples for requirements |
+| `get_evidence_checklist` | Get automation-friendly evidence suggestions for KSI compliance (community suggestions, not official FedRAMP) |
 
 ### Control Mapping
 | Tool | Description |
@@ -193,6 +193,42 @@ The server provides 20 tools organized into categories. All tools follow the err
 |------|-------------|
 | `health_check` | Confirm the server indexed successfully |
 | `update_repository` | Force update the cached FedRAMP docs |
+
+## Evidence Collection Suggestions
+
+The `get_evidence_checklist` tool provides **community-suggested** evidence examples for each KSI. These are automation-friendly suggestions showing how to programmatically collect compliance evidence via APIs, CLI commands, and security tools.
+
+**Important:** These are NOT official FedRAMP guidance. Always verify requirements with [official FedRAMP documentation](https://fedramp.gov).
+
+### What's Included
+
+For each of the 72 KSI indicators, we provide:
+- **Evidence types**: API calls, reports, scans, logs, configurations, documentation
+- **Automation sources**: AWS, Azure, GCP, Okta, Splunk, Terraform, GitHub Actions, etc.
+- **Example commands**: Ready-to-use CLI commands and API endpoints
+
+### Example Evidence Sources by Theme
+
+| Theme | Example Sources |
+|-------|----------------|
+| **IAM** | Okta/Entra MFA policies, AWS IAM credential reports, PAM tools (CyberArk, Vault) |
+| **CNA** | AWS Security Groups, VPC Flow Logs, Container scans (Trivy), CSPM (Wiz, Prisma) |
+| **MLA** | SIEM config (Splunk, Sentinel), CloudTrail, IaC scans (Checkov, tfsec) |
+| **CMT** | Git history, CI/CD pipelines (GitHub Actions), Change tickets (ServiceNow, Jira) |
+| **SVC** | TLS scans (SSL Labs), Secrets Manager rotation, Patch compliance (SSM) |
+| **INR** | PagerDuty incidents, Post-mortems (Blameless), ServiceNow tickets |
+| **RPL** | AWS Backup reports, DR test logs, Chaos engineering results |
+| **TPR** | Vendor ratings (SecurityScorecard), Dependency scans (Dependabot, Snyk) |
+
+### Usage Example
+
+```
+"What evidence do I need for KSI-IAM-01 (Phishing-Resistant MFA)?"
+→ Returns suggested API calls, CLI commands, and artifacts to collect
+
+"Get evidence checklist for the CNA theme"
+→ Returns automation sources for all Cloud Native Architecture indicators
+```
 
 See `src/tools/` for the precise schemas implemented with Zod. Each tool returns either a successful object or an `error` payload containing `code`, `message`, and optional `hint`.
 

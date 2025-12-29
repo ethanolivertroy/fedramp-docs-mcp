@@ -1,13 +1,41 @@
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { z } from "zod";
 
 import { getKsiItems } from "../indexer.js";
+import type { EvidenceExamplesData, EvidenceItem, KsiItem } from "../types.js";
 import type { ToolDefinition } from "./base.js";
 
-interface EvidenceItem {
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+interface EvidenceChecklistItem {
   ksiId: string;
-  ksiTitle: string;
+  ksiName: string;
+  ksiStatement?: string;
   theme: string;
-  evidenceExamples: string[];
+  impact?: { low?: boolean; moderate?: boolean; high?: boolean };
+  evidence: EvidenceItem[];
+}
+
+interface EvidenceChecklistResult {
+  disclaimer: string;
+  total: number;
+  items: EvidenceChecklistItem[];
+  themes: string[];
+}
+
+// Load evidence examples from data file
+function loadEvidenceExamples(): EvidenceExamplesData | null {
+  try {
+    // Look for evidence-examples.json in data directory (relative to package root)
+    const dataPath = join(__dirname, "..", "..", "data", "evidence-examples.json");
+    const content = readFileSync(dataPath, "utf-8");
+    return JSON.parse(content) as EvidenceExamplesData;
+  } catch {
+    // If file doesn't exist or can't be parsed, return null
+    return null;
+  }
 }
 
 const schema = z.object({
@@ -20,15 +48,21 @@ const schema = z.object({
 
 export const getEvidenceChecklistTool: ToolDefinition<
   typeof schema,
-  { total: number; items: EvidenceItem[]; allEvidence: string[] }
+  EvidenceChecklistResult
 > = {
   name: "get_evidence_checklist",
   description:
-    "Collect evidence examples from KSI requirements. Returns a checklist of what evidence is needed for compliance. Filter by theme or specific KSI ID.",
+    "Get suggested evidence examples for KSI compliance. Returns automation-friendly evidence collection sources (APIs, CLI commands, artifacts) for each KSI. NOTE: These are community suggestions, not official FedRAMP guidance.",
   schema,
   execute: async (input) => {
-    const all = getKsiItems();
-    let filtered = all.filter((item) => item.evidenceExamples?.length);
+    const evidenceData = loadEvidenceExamples();
+    const ksiItems = getKsiItems();
+
+    const disclaimer = evidenceData?.disclaimer ??
+      "These evidence examples are community suggestions to help with FedRAMP compliance automation. They are NOT official FedRAMP guidance. Always verify requirements with official FedRAMP documentation at https://fedramp.gov";
+
+    // Filter KSI items based on input
+    let filtered: KsiItem[] = ksiItems;
 
     if (input.theme) {
       const themeLower = input.theme.toLowerCase();
@@ -38,25 +72,33 @@ export const getEvidenceChecklistTool: ToolDefinition<
     }
 
     if (input.id) {
-      filtered = filtered.filter((item) => item.id === input.id);
+      const idUpper = input.id.toUpperCase();
+      filtered = filtered.filter((item) => item.id.toUpperCase() === idUpper);
     }
 
-    const items: EvidenceItem[] = filtered.map((item) => ({
-      ksiId: item.id,
-      ksiTitle: item.title ?? "",
-      theme: item.category ?? "",
-      evidenceExamples: item.evidenceExamples ?? [],
-    }));
+    // Build checklist items with evidence examples
+    const items: EvidenceChecklistItem[] = filtered.map((ksi) => {
+      // Get evidence examples for this KSI from our data file
+      const evidenceExample = evidenceData?.examples[ksi.id];
 
-    // Collect all unique evidence examples
-    const allEvidence = [
-      ...new Set(items.flatMap((item) => item.evidenceExamples)),
-    ].sort();
+      return {
+        ksiId: ksi.id,
+        ksiName: ksi.title ?? evidenceExample?.name ?? ksi.id,
+        ksiStatement: ksi.statement ?? ksi.description,
+        theme: ksi.category ?? ksi.theme ?? "",
+        impact: ksi.impact,
+        evidence: evidenceExample?.evidence ?? [],
+      };
+    });
+
+    // Get unique themes
+    const themes = [...new Set(items.map((item) => item.theme).filter(Boolean))].sort();
 
     return {
+      disclaimer,
       total: items.length,
       items,
-      allEvidence,
+      themes,
     };
   },
 };

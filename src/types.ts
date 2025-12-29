@@ -137,3 +137,33 @@ export interface HealthCheckResult {
   repoPath: string;
   errors?: string[];
 }
+
+// Evidence Examples Types (community suggestions, not official FedRAMP)
+export interface EvidenceSource {
+  provider: string;
+  command?: string;
+  api?: string;
+  artifact?: string;
+  description?: string;
+  field?: string;
+  service?: string;
+}
+
+export interface EvidenceItem {
+  type: "api" | "report" | "scan" | "log" | "configuration" | "documentation" | "inventory" | "metrics";
+  description: string;
+  sources: EvidenceSource[];
+}
+
+export interface KsiEvidenceExample {
+  name: string;
+  evidence: EvidenceItem[];
+}
+
+export interface EvidenceExamplesData {
+  $schema?: string;
+  disclaimer: string;
+  version: string;
+  lastUpdated: string;
+  examples: Record<string, KsiEvidenceExample>;
+}

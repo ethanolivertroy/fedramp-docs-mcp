@@ -1,0 +1,1021 @@
+{
+  "$schema": "./evidence-examples.schema.json",
+  "disclaimer": "These evidence examples are community suggestions to help with FedRAMP compliance automation. They are NOT official FedRAMP guidance. Always verify requirements with official FedRAMP documentation at https://fedramp.gov",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-29",
+  "examples": {
+    "KSI-AFR-01": {
+      "name": "Minimum Assessment Scope",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "System boundary documentation",
+          "sources": [
+            {"provider": "manual", "artifact": "System Security Plan (SSP) boundary diagrams"},
+            {"provider": "aws", "command": "aws organizations describe-organization", "description": "AWS Organization structure"},
+            {"provider": "azure", "command": "az account list --query '[].{name:name,id:id}'", "description": "Azure subscription inventory"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Asset inventory within assessment scope",
+          "sources": [
+            {"provider": "aws", "command": "aws resourcegroupstaggingapi get-resources --tag-filters Key=FedRAMP,Values=InScope", "description": "Tagged in-scope resources"},
+            {"provider": "azure", "command": "az resource list --tag FedRAMP=InScope", "description": "Tagged Azure resources"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-02": {
+      "name": "Key Security Indicators",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "KSI implementation tracking",
+          "sources": [
+            {"provider": "manual", "artifact": "KSI compliance matrix with status for each indicator"},
+            {"provider": "api", "description": "This MCP server's analyze_control_coverage output"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-03": {
+      "name": "Authorization Data Sharing",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Data sharing agreements and configurations",
+          "sources": [
+            {"provider": "manual", "artifact": "Authorization Data Sharing (ADS) agreements"},
+            {"provider": "aws", "command": "aws ram list-resources --resource-owner SELF", "description": "AWS Resource Access Manager shares"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-04": {
+      "name": "Vulnerability Detection and Response",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "Vulnerability scan results",
+          "sources": [
+            {"provider": "aws", "command": "aws inspector2 list-findings --filter-criteria '{\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}'", "description": "AWS Inspector findings"},
+            {"provider": "qualys", "api": "/api/2.0/fo/scan/", "description": "Qualys scan results"},
+            {"provider": "nessus", "api": "/scans/{scan_id}/export", "description": "Nessus scan export"},
+            {"provider": "trivy", "command": "trivy image --format json <image>", "description": "Container vulnerability scan"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Vulnerability remediation metrics",
+          "sources": [
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=vulnerability", "description": "Vulnerability remediation tickets"},
+            {"provider": "servicenow", "api": "/api/now/table/sn_vul_vulnerable_item", "description": "ServiceNow vulnerability records"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-05": {
+      "name": "Significant Change Notifications",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Change notification records",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateChangeSet", "description": "CloudFormation changes"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/releases", "description": "Release notifications"},
+            {"provider": "manual", "artifact": "Significant Change Request (SCR) log"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-06": {
+      "name": "Collaborative Continuous Monitoring",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Continuous monitoring reports",
+          "sources": [
+            {"provider": "manual", "artifact": "Monthly/Quarterly ConMon reports"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "Security Hub compliance findings"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-07": {
+      "name": "Recommended Secure Configuration",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Secure configuration baselines",
+          "sources": [
+            {"provider": "aws", "command": "aws ssm list-documents --filters Key=DocumentType,Values=Package", "description": "SSM configuration documents"},
+            {"provider": "cis", "artifact": "CIS Benchmark compliance reports"},
+            {"provider": "manual", "artifact": "Secure Configuration Guide for customers"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-08": {
+      "name": "FedRAMP Security Inbox",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Security inbox configuration",
+          "sources": [
+            {"provider": "manual", "artifact": "Security inbox procedures and monitoring evidence"},
+            {"provider": "email", "description": "Security inbox activity logs (fedramp-security@company.com)"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-09": {
+      "name": "Persistent Validation and Assessment",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Automated compliance validation results",
+          "sources": [
+            {"provider": "aws", "command": "aws configservice get-compliance-summary-by-config-rule", "description": "AWS Config compliance"},
+            {"provider": "azure", "command": "az policy state summarize", "description": "Azure Policy compliance"},
+            {"provider": "checkov", "command": "checkov -d . --output json", "description": "IaC compliance scan"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-10": {
+      "name": "Incident Communications Procedures",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Incident communication procedures",
+          "sources": [
+            {"provider": "manual", "artifact": "Incident Response Plan with FedRAMP ICP integration"},
+            {"provider": "pagerduty", "api": "/incidents", "description": "Incident notification records"}
+          ]
+        }
+      ]
+    },
+    "KSI-AFR-11": {
+      "name": "Using Cryptographic Modules",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "FIPS 140-2/3 module inventory",
+          "sources": [
+            {"provider": "aws", "command": "aws kms describe-key --key-id <key-id> --query 'KeyMetadata.KeySpec'", "description": "KMS key configuration"},
+            {"provider": "manual", "artifact": "FIPS 140-2/3 validated module certificates"},
+            {"provider": "openssl", "command": "openssl version -a", "description": "OpenSSL FIPS status"}
+          ]
+        }
+      ]
+    },
+    "KSI-CED-01": {
+      "name": "General Education",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Security awareness training completion",
+          "sources": [
+            {"provider": "knowbe4", "api": "/v1/training/enrollments", "description": "KnowBe4 training status"},
+            {"provider": "workday", "api": "/learning/v1/completions", "description": "Workday Learning completions"},
+            {"provider": "manual", "artifact": "LMS training completion report"}
+          ]
+        }
+      ]
+    },
+    "KSI-CED-02": {
+      "name": "Role-Specific Education",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Role-based training completion for privileged users",
+          "sources": [
+            {"provider": "manual", "artifact": "Privileged user training matrix"},
+            {"provider": "lms", "description": "Role-specific course completion records"}
+          ]
+        }
+      ]
+    },
+    "KSI-CED-03": {
+      "name": "Development and Engineering Education",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Secure development training",
+          "sources": [
+            {"provider": "manual", "artifact": "OWASP/secure coding training records"},
+            {"provider": "github", "api": "/orgs/{org}/dependabot/alerts", "description": "Developer security alert acknowledgments"}
+          ]
+        }
+      ]
+    },
+    "KSI-CED-04": {
+      "name": "Incident Response and Disaster Recovery Education",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "IR/DR training and drill participation",
+          "sources": [
+            {"provider": "manual", "artifact": "Tabletop exercise attendance records"},
+            {"provider": "manual", "artifact": "DR drill participation logs"}
+          ]
+        }
+      ]
+    },
+    "KSI-CMT-01": {
+      "name": "Log and Monitor Changes",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Change audit logs",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --start-time <date> --end-time <date>", "description": "CloudTrail change events"},
+            {"provider": "azure", "command": "az monitor activity-log list --start-time <date>", "description": "Azure Activity Log"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/commits", "description": "Git commit history"}
+          ]
+        }
+      ]
+    },
+    "KSI-CMT-02": {
+      "name": "Redeployment",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Immutable infrastructure deployment evidence",
+          "sources": [
+            {"provider": "argocd", "api": "/api/v1/applications", "description": "ArgoCD deployment history"},
+            {"provider": "aws", "command": "aws ecs describe-services --cluster <cluster> --services <service>", "description": "ECS deployment configuration"},
+            {"provider": "terraform", "command": "terraform state list", "description": "Terraform managed resources"}
+          ]
+        }
+      ]
+    },
+    "KSI-CMT-03": {
+      "name": "Automated Testing and Validation",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "CI/CD pipeline test results",
+          "sources": [
+            {"provider": "github", "api": "/repos/{owner}/{repo}/actions/runs", "description": "GitHub Actions workflow runs"},
+            {"provider": "gitlab", "api": "/projects/{id}/pipelines", "description": "GitLab CI pipeline history"},
+            {"provider": "jenkins", "api": "/job/{name}/api/json", "description": "Jenkins build history"}
+          ]
+        }
+      ]
+    },
+    "KSI-CMT-04": {
+      "name": "Change Management Procedure",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Change management records",
+          "sources": [
+            {"provider": "servicenow", "api": "/api/now/table/change_request", "description": "ServiceNow change requests"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=type=Change", "description": "Jira change tickets"},
+            {"provider": "manual", "artifact": "Change Advisory Board (CAB) meeting minutes"}
+          ]
+        }
+      ]
+    },
+    "KSI-CMT-05": {
+      "name": "Emergency Changes",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Emergency change procedures and logs",
+          "sources": [
+            {"provider": "servicenow", "api": "/api/now/table/change_request?sysparm_query=type=emergency", "description": "Emergency change records"},
+            {"provider": "manual", "artifact": "Emergency change authorization logs"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-01": {
+      "name": "Restrict Network Traffic",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Network security configuration",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-security-groups", "description": "Security group rules"},
+            {"provider": "azure", "command": "az network nsg list --query '[].{name:name,rules:securityRules}'", "description": "NSG rules"},
+            {"provider": "gcp", "command": "gcloud compute firewall-rules list --format=json", "description": "GCP firewall rules"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-02": {
+      "name": "Minimize the Attack Surface",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "Attack surface analysis",
+          "sources": [
+            {"provider": "trivy", "command": "trivy image --severity HIGH,CRITICAL <image>", "description": "Container vulnerability scan"},
+            {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[].{id:InstanceId,ports:SecurityGroups}'", "description": "Exposed instance analysis"},
+            {"provider": "shodan", "api": "/shodan/host/{ip}", "description": "External exposure analysis"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-03": {
+      "name": "Enforce Traffic Flow",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Network flow logs",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-flow-logs", "description": "VPC Flow Logs configuration"},
+            {"provider": "azure", "command": "az network watcher flow-log list", "description": "Azure Network Watcher flow logs"},
+            {"provider": "manual", "artifact": "Network segmentation diagrams"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-04": {
+      "name": "Immutable Infrastructure",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Immutable infrastructure evidence",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-launch-templates", "description": "EC2 launch templates"},
+            {"provider": "docker", "command": "docker images --format '{{.Repository}}:{{.Tag}}@{{.Digest}}'", "description": "Immutable container images"},
+            {"provider": "terraform", "command": "terraform show -json", "description": "Infrastructure as Code state"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-05": {
+      "name": "Unwanted Activity",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "DDoS and abuse protection",
+          "sources": [
+            {"provider": "aws", "command": "aws shield describe-protection", "description": "AWS Shield protection status"},
+            {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"},
+            {"provider": "aws", "command": "aws wafv2 list-web-acls --scope REGIONAL", "description": "WAF configuration"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-06": {
+      "name": "High Availability",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "High availability configuration",
+          "sources": [
+            {"provider": "aws", "command": "aws rds describe-db-clusters --query 'DBClusters[].{id:DBClusterIdentifier,multiAZ:MultiAZ}'", "description": "RDS Multi-AZ status"},
+            {"provider": "aws", "command": "aws elbv2 describe-target-health --target-group-arn <arn>", "description": "Load balancer health"},
+            {"provider": "kubernetes", "command": "kubectl get deployments -o json | jq '.items[].spec.replicas'", "description": "Kubernetes replica counts"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-07": {
+      "name": "Best Practices",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Cloud best practices compliance",
+          "sources": [
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ProductName\":[{\"Value\":\"AWS Foundational Security Best Practices\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS FSBP findings"},
+            {"provider": "prowler", "command": "prowler aws --output-formats json", "description": "Prowler CIS benchmark scan"},
+            {"provider": "azure", "command": "az security assessment list", "description": "Azure Security Center assessments"}
+          ]
+        }
+      ]
+    },
+    "KSI-CNA-08": {
+      "name": "Persistent Assessment and Automated Enforcement",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "CSPM findings and auto-remediation",
+          "sources": [
+            {"provider": "aws", "command": "aws configservice get-compliance-details-by-config-rule --config-rule-name <rule>", "description": "AWS Config rule compliance"},
+            {"provider": "wiz", "api": "/api/v1/issues", "description": "Wiz CSPM findings"},
+            {"provider": "prisma", "api": "/v2/alert", "description": "Prisma Cloud alerts"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-01": {
+      "name": "Phishing-Resistant MFA",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "MFA enforcement policy",
+          "sources": [
+            {"provider": "okta", "api": "/api/v1/policies?type=MFA_ENROLL", "description": "Okta MFA policy"},
+            {"provider": "azure", "api": "/v1.0/policies/authenticationStrengthPolicies", "description": "Entra ID authentication strength"},
+            {"provider": "aws", "command": "aws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'", "description": "AWS account MFA status"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "MFA enrollment status",
+          "sources": [
+            {"provider": "aws", "command": "aws iam generate-credential-report && aws iam get-credential-report", "description": "IAM credential report with MFA status"},
+            {"provider": "okta", "api": "/api/v1/users?filter=status eq \"ACTIVE\"", "description": "User MFA enrollment status"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-02": {
+      "name": "Passwordless Authentication",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Passwordless authentication settings",
+          "sources": [
+            {"provider": "azure", "api": "/v1.0/policies/authenticationMethodsPolicy", "description": "Entra ID passwordless methods"},
+            {"provider": "okta", "api": "/api/v1/authenticators", "description": "Okta authenticator configuration"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-03": {
+      "name": "Non-User Accounts",
+      "evidence": [
+        {
+          "type": "inventory",
+          "description": "Service account inventory",
+          "sources": [
+            {"provider": "aws", "command": "aws iam list-roles --query 'Roles[?contains(RoleName,`service`)]'", "description": "AWS service roles"},
+            {"provider": "azure", "command": "az ad sp list --filter \"servicePrincipalType eq 'Application'\"", "description": "Azure service principals"},
+            {"provider": "kubernetes", "command": "kubectl get serviceaccounts --all-namespaces -o json", "description": "Kubernetes service accounts"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-04": {
+      "name": "Just-in-Time Authorization",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "JIT access requests and approvals",
+          "sources": [
+            {"provider": "cyberark", "api": "/PasswordVault/API/AccountsRequests", "description": "CyberArk access requests"},
+            {"provider": "azure", "api": "/v1.0/identityGovernance/privilegedAccess/group/assignmentRequests", "description": "Azure PIM requests"},
+            {"provider": "hashicorp", "api": "/v1/sys/leases/lookup", "description": "Vault lease information"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-05": {
+      "name": "Least Privilege",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Access review and permission analysis",
+          "sources": [
+            {"provider": "aws", "command": "aws accessanalyzer list-findings --analyzer-arn <arn>", "description": "IAM Access Analyzer findings"},
+            {"provider": "azure", "command": "az role assignment list --all", "description": "Azure RBAC assignments"},
+            {"provider": "manual", "artifact": "Quarterly access review records"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-06": {
+      "name": "Suspicious Activity",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Automated account protection rules",
+          "sources": [
+            {"provider": "okta", "api": "/api/v1/behaviors", "description": "Okta behavior detection rules"},
+            {"provider": "azure", "api": "/v1.0/identityProtection/riskDetections", "description": "Entra ID risk detections"},
+            {"provider": "aws", "command": "aws guardduty list-findings --detector-id <id>", "description": "GuardDuty IAM-related findings"}
+          ]
+        }
+      ]
+    },
+    "KSI-IAM-07": {
+      "name": "Automated Account Management",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Account lifecycle automation logs",
+          "sources": [
+            {"provider": "okta", "api": "/api/v1/logs?filter=eventType eq \"user.lifecycle.create\"", "description": "Okta user lifecycle events"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateUser", "description": "IAM user creation events"},
+            {"provider": "scim", "description": "SCIM provisioning logs"}
+          ]
+        }
+      ]
+    },
+    "KSI-INR-01": {
+      "name": "Incident Response Procedure",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Incident response procedures",
+          "sources": [
+            {"provider": "manual", "artifact": "Incident Response Plan document"},
+            {"provider": "pagerduty", "api": "/response_plays", "description": "PagerDuty response plays"},
+            {"provider": "opsgenie", "api": "/v2/policies", "description": "Opsgenie escalation policies"}
+          ]
+        }
+      ]
+    },
+    "KSI-INR-02": {
+      "name": "Incident Logging",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Incident records",
+          "sources": [
+            {"provider": "servicenow", "api": "/api/now/table/incident", "description": "ServiceNow incidents"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=type=Incident", "description": "Jira incident tickets"},
+            {"provider": "pagerduty", "api": "/incidents", "description": "PagerDuty incident history"}
+          ]
+        }
+      ]
+    },
+    "KSI-INR-03": {
+      "name": "Incident After Action Reports",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Post-incident reviews",
+          "sources": [
+            {"provider": "manual", "artifact": "Post-mortem/After Action Report documents"},
+            {"provider": "blameless", "api": "/api/v1/incidents/{id}/retrospective", "description": "Blameless retrospectives"},
+            {"provider": "incidentio", "api": "/v2/post_incident_tasks", "description": "Incident.io follow-up tasks"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-01": {
+      "name": "Security Information and Event Management (SIEM)",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "SIEM configuration and coverage",
+          "sources": [
+            {"provider": "splunk", "api": "/services/data/inputs", "description": "Splunk data inputs"},
+            {"provider": "azure", "command": "az sentinel data-connector list --workspace-name <ws> --resource-group <rg>", "description": "Sentinel data connectors"},
+            {"provider": "elastic", "api": "/_cat/indices?v", "description": "Elasticsearch log indices"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-02": {
+      "name": "Audit Logging",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Log review evidence",
+          "sources": [
+            {"provider": "splunk", "api": "/services/saved/searches", "description": "Splunk scheduled searches"},
+            {"provider": "manual", "artifact": "Log review records and findings"},
+            {"provider": "azure", "command": "az monitor log-analytics query -w <workspace-id> --analytics-query <query>", "description": "Log Analytics query results"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-03": {
+      "name": "Log Integrity",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Log tamper protection",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail describe-trails --query 'trailList[].{Name:Name,LogFileValidation:LogFileValidationEnabled}'", "description": "CloudTrail log validation"},
+            {"provider": "aws", "command": "aws s3api get-bucket-versioning --bucket <bucket>", "description": "S3 log bucket versioning"},
+            {"provider": "azure", "command": "az storage account show --name <account> --query 'immutableStorageWithVersioning'", "description": "Azure immutable storage"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-04": {
+      "name": "Log Retention",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Log retention policies",
+          "sources": [
+            {"provider": "aws", "command": "aws logs describe-log-groups --query 'logGroups[].{name:logGroupName,retention:retentionInDays}'", "description": "CloudWatch Logs retention"},
+            {"provider": "splunk", "api": "/services/data/indexes", "description": "Splunk index retention settings"},
+            {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <ws> --query 'retentionInDays'", "description": "Log Analytics retention"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-05": {
+      "name": "Infrastructure as Code",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "IaC security scanning results",
+          "sources": [
+            {"provider": "checkov", "command": "checkov -d . --output json", "description": "Checkov IaC scan"},
+            {"provider": "tfsec", "command": "tfsec . --format json", "description": "tfsec Terraform scan"},
+            {"provider": "kics", "command": "kics scan -p . -o json", "description": "KICS IaC scan"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-06": {
+      "name": "Alerting",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Security alerting configuration",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudwatch describe-alarms --alarm-types MetricAlarm", "description": "CloudWatch alarms"},
+            {"provider": "pagerduty", "api": "/services", "description": "PagerDuty service integrations"},
+            {"provider": "splunk", "api": "/services/alerts/fired_alerts", "description": "Splunk alert history"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-07": {
+      "name": "Event Types",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Monitored event types documentation",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail get-event-selectors --trail-name <trail>", "description": "CloudTrail event selectors"},
+            {"provider": "manual", "artifact": "Log source inventory with event types"},
+            {"provider": "splunk", "api": "/services/data/inputs", "description": "Splunk input configurations"}
+          ]
+        }
+      ]
+    },
+    "KSI-MLA-08": {
+      "name": "Log Data Access",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Log access controls",
+          "sources": [
+            {"provider": "splunk", "api": "/services/authorization/roles", "description": "Splunk role-based access"},
+            {"provider": "aws", "command": "aws logs describe-resource-policies", "description": "CloudWatch Logs resource policies"},
+            {"provider": "elastic", "api": "/_security/role", "description": "Elasticsearch security roles"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-01": {
+      "name": "Automated Inventory",
+      "evidence": [
+        {
+          "type": "inventory",
+          "description": "Real-time asset inventory",
+          "sources": [
+            {"provider": "aws", "command": "aws configservice list-discovered-resources --resource-type AWS::EC2::Instance", "description": "AWS Config discovered resources"},
+            {"provider": "azure", "command": "az graph query -q 'Resources | summarize count() by type'", "description": "Azure Resource Graph inventory"},
+            {"provider": "servicenow", "api": "/api/now/table/cmdb_ci", "description": "ServiceNow CMDB"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-02": {
+      "name": "Security Objectives and Requirements",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Security requirements documentation",
+          "sources": [
+            {"provider": "manual", "artifact": "System Security Plan security objectives"},
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=security-requirement", "description": "Security requirements in Jira"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-03": {
+      "name": "Vulnerability Disclosure Program",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "VDP submissions and status",
+          "sources": [
+            {"provider": "hackerone", "api": "/v1/reports", "description": "HackerOne reports"},
+            {"provider": "bugcrowd", "api": "/submissions", "description": "Bugcrowd submissions"},
+            {"provider": "manual", "artifact": "security.txt file and VDP policy"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-04": {
+      "name": "CISA Secure By Design",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Secure by Design practices",
+          "sources": [
+            {"provider": "manual", "artifact": "SDLC documentation with security integration"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/code-scanning/alerts", "description": "GitHub code scanning alerts"},
+            {"provider": "sonarqube", "api": "/api/issues/search", "description": "SonarQube security hotspots"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-05": {
+      "name": "Evaluate Implementations",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Implementation evaluation methods",
+          "sources": [
+            {"provider": "manual", "artifact": "Security assessment methodology documentation"},
+            {"provider": "manual", "artifact": "Penetration test reports"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-06": {
+      "name": "Security Investment Effectiveness",
+      "evidence": [
+        {
+          "type": "metrics",
+          "description": "Security metrics and KPIs",
+          "sources": [
+            {"provider": "manual", "artifact": "Security metrics dashboard"},
+            {"provider": "manual", "artifact": "Security program effectiveness reports"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-07": {
+      "name": "Supply Chain Risk Management",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Software supply chain security",
+          "sources": [
+            {"provider": "syft", "command": "syft <image> -o spdx-json", "description": "SBOM generation"},
+            {"provider": "grype", "command": "grype sbom:<sbom-file> -o json", "description": "SBOM vulnerability scan"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/dependency-graph/sbom", "description": "GitHub SBOM export"}
+          ]
+        }
+      ]
+    },
+    "KSI-PIY-08": {
+      "name": "Executive Support",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Executive security engagement",
+          "sources": [
+            {"provider": "manual", "artifact": "Security steering committee meeting minutes"},
+            {"provider": "manual", "artifact": "Executive security briefing records"}
+          ]
+        }
+      ]
+    },
+    "KSI-RPL-01": {
+      "name": "Recovery Objectives",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "RTO/RPO definitions",
+          "sources": [
+            {"provider": "manual", "artifact": "Business Impact Analysis with RTO/RPO"},
+            {"provider": "manual", "artifact": "Disaster Recovery Plan"}
+          ]
+        }
+      ]
+    },
+    "KSI-RPL-02": {
+      "name": "Recovery Plan",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Recovery procedures",
+          "sources": [
+            {"provider": "manual", "artifact": "Disaster Recovery Plan document"},
+            {"provider": "manual", "artifact": "Business Continuity Plan"}
+          ]
+        }
+      ]
+    },
+    "KSI-RPL-03": {
+      "name": "System Backups",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Backup status and compliance",
+          "sources": [
+            {"provider": "aws", "command": "aws backup list-backup-jobs --by-state COMPLETED", "description": "AWS Backup job status"},
+            {"provider": "azure", "command": "az backup job list --resource-group <rg> --vault-name <vault>", "description": "Azure Backup jobs"},
+            {"provider": "veeam", "api": "/api/v1/backupServers/{id}/sessions", "description": "Veeam backup sessions"}
+          ]
+        }
+      ]
+    },
+    "KSI-RPL-04": {
+      "name": "Recovery Testing",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "DR test results",
+          "sources": [
+            {"provider": "manual", "artifact": "DR test execution records and results"},
+            {"provider": "aws", "command": "aws drs describe-recovery-instances", "description": "AWS Elastic Disaster Recovery status"},
+            {"provider": "manual", "artifact": "Chaos engineering experiment results"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-01": {
+      "name": "Continuous Improvement",
+      "evidence": [
+        {
+          "type": "documentation",
+          "description": "Security improvement tracking",
+          "sources": [
+            {"provider": "jira", "api": "/rest/api/3/search?jql=labels=security-improvement", "description": "Security improvement tickets"},
+            {"provider": "manual", "artifact": "Security roadmap and improvement plans"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-02": {
+      "name": "Network Encryption",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "TLS/encryption configuration",
+          "sources": [
+            {"provider": "ssllabs", "api": "/api/v3/analyze?host=<domain>", "description": "SSL Labs scan results"},
+            {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"},
+            {"provider": "aws", "command": "aws elbv2 describe-listeners --load-balancer-arn <arn> --query 'Listeners[].{Port:Port,Protocol:Protocol}'", "description": "Load balancer TLS configuration"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-03": {
+      "name": "Data Encryption",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Data-at-rest encryption",
+          "sources": [
+            {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{id:DBInstanceIdentifier,encrypted:StorageEncrypted}'", "description": "RDS encryption status"},
+            {"provider": "aws", "command": "aws s3api get-bucket-encryption --bucket <bucket>", "description": "S3 encryption configuration"},
+            {"provider": "azure", "command": "az storage account show --name <account> --query 'encryption'", "description": "Azure storage encryption"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-04": {
+      "name": "Configuration Automation",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Configuration management automation",
+          "sources": [
+            {"provider": "ansible", "command": "ansible-inventory --list", "description": "Ansible managed inventory"},
+            {"provider": "aws", "command": "aws ssm describe-instance-information", "description": "SSM managed instances"},
+            {"provider": "puppet", "api": "/pdb/query/v4/nodes", "description": "Puppet managed nodes"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-05": {
+      "name": "Resource Integrity",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "File and resource integrity monitoring",
+          "sources": [
+            {"provider": "aws", "command": "aws configservice get-resource-config-history --resource-type AWS::EC2::Instance --resource-id <id>", "description": "AWS Config resource history"},
+            {"provider": "tripwire", "api": "/api/v1/elements", "description": "Tripwire element status"},
+            {"provider": "ossec", "artifact": "OSSEC syscheck reports"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-06": {
+      "name": "Secret Management",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Secret rotation and access logs",
+          "sources": [
+            {"provider": "hashicorp", "api": "/v1/sys/audit", "description": "Vault audit logs"},
+            {"provider": "aws", "command": "aws secretsmanager list-secrets --query 'SecretList[].{Name:Name,LastRotatedDate:LastRotatedDate}'", "description": "Secrets Manager rotation status"},
+            {"provider": "azure", "command": "az keyvault secret list --vault-name <vault>", "description": "Key Vault secrets"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-07": {
+      "name": "Patching",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Patch compliance status",
+          "sources": [
+            {"provider": "aws", "command": "aws ssm describe-instance-patch-states", "description": "SSM Patch Manager status"},
+            {"provider": "azure", "command": "az vm assess-patches --resource-group <rg> --name <vm>", "description": "Azure Update Manager assessment"},
+            {"provider": "qualys", "api": "/api/2.0/fo/scan/compliance/", "description": "Qualys patch compliance"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-08": {
+      "name": "Shared Resources",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Multi-tenant isolation configuration",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[].{id:InstanceId,tenancy:Placement.Tenancy}'", "description": "EC2 tenancy configuration"},
+            {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o json", "description": "Kubernetes network policies for isolation"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-09": {
+      "name": "Communication Integrity",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Service-to-service communication security",
+          "sources": [
+            {"provider": "istio", "command": "istioctl proxy-config cluster <pod>", "description": "Istio service mesh mTLS"},
+            {"provider": "aws", "command": "aws appmesh describe-virtual-service --mesh-name <mesh> --virtual-service-name <svc>", "description": "App Mesh TLS configuration"},
+            {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o json", "description": "Istio PeerAuthentication policies"}
+          ]
+        }
+      ]
+    },
+    "KSI-SVC-10": {
+      "name": "Data Destruction",
+      "evidence": [
+        {
+          "type": "log",
+          "description": "Data deletion records",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteObject", "description": "S3 deletion events"},
+            {"provider": "manual", "artifact": "Data destruction certificates"},
+            {"provider": "manual", "artifact": "Customer data deletion request logs"}
+          ]
+        }
+      ]
+    },
+    "KSI-TPR-01": {
+      "name": "Third-Party Dependencies",
+      "evidence": [
+        {
+          "type": "inventory",
+          "description": "Third-party service inventory",
+          "sources": [
+            {"provider": "manual", "artifact": "Third-party vendor inventory"},
+            {"provider": "manual", "artifact": "Vendor risk assessments"}
+          ]
+        }
+      ]
+    },
+    "KSI-TPR-02": {
+      "name": "Third-Party Access",
+      "evidence": [
+        {
+          "type": "configuration",
+          "description": "Third-party access controls",
+          "sources": [
+            {"provider": "aws", "command": "aws iam list-roles --query 'Roles[?contains(AssumeRolePolicyDocument,`sts:AssumeRole`)]'", "description": "Cross-account IAM roles"},
+            {"provider": "okta", "api": "/api/v1/apps", "description": "Third-party app integrations"}
+          ]
+        }
+      ]
+    },
+    "KSI-TPR-03": {
+      "name": "Supply Chain Risk Management",
+      "evidence": [
+        {
+          "type": "report",
+          "description": "Vendor security assessments",
+          "sources": [
+            {"provider": "securityscorecard", "api": "/portfolios/{id}/companies", "description": "SecurityScorecard vendor ratings"},
+            {"provider": "bitsight", "api": "/ratings/v1/companies", "description": "BitSight vendor ratings"},
+            {"provider": "manual", "artifact": "Vendor security questionnaire responses"}
+          ]
+        }
+      ]
+    },
+    "KSI-TPR-04": {
+      "name": "Supply Chain Risk Monitoring",
+      "evidence": [
+        {
+          "type": "scan",
+          "description": "Dependency vulnerability monitoring",
+          "sources": [
+            {"provider": "github", "api": "/repos/{owner}/{repo}/dependabot/alerts", "description": "Dependabot alerts"},
+            {"provider": "snyk", "api": "/org/{orgId}/projects", "description": "Snyk project vulnerabilities"},
+            {"provider": "dependencycheck", "command": "dependency-check --scan . --format JSON", "description": "OWASP Dependency-Check scan"}
+          ]
+        }
+      ]
+    }
+  }
+}

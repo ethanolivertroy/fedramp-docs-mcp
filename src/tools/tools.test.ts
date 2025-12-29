@@ -199,12 +199,12 @@ describe("get_evidence_checklist", () => {
     vi.mocked(getKsiItems).mockReturnValue(mockKsiItems);
   });
 
-  it("should return all evidence items", async () => {
+  it("should return all KSI items with disclaimer", async () => {
     const result = await getEvidenceChecklistTool.execute({});
 
     expect(result.total).toBe(3);
-    expect(result.allEvidence).toContain("User provisioning logs");
-    expect(result.allEvidence).toContain("Access reviews");
+    expect(result.disclaimer).toContain("community suggestions");
+    expect(result.disclaimer).toContain("NOT official FedRAMP guidance");
   });
 
   it("should filter by theme", async () => {
@@ -221,11 +221,11 @@ describe("get_evidence_checklist", () => {
     expect(result.items[0].ksiId).toBe("KSI-CNA-01");
   });
 
-  it("should deduplicate evidence examples", async () => {
+  it("should include themes list", async () => {
     const result = await getEvidenceChecklistTool.execute({});
 
-    // All evidence should be unique (no duplicates)
-    expect(result.allEvidence.length).toBe(new Set(result.allEvidence).size);
+    expect(result.themes).toContain("IAM");
+    expect(result.themes).toContain("CNA");
   });
 });
 
