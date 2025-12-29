@@ -83,13 +83,13 @@ export function extractControlLikeStrings(input: unknown): string[] {
   return [];
 }
 
-const CONTROL_PATTERN = /\b([A-Z]{2}-\d{1,3}(?:\([\dA-Za-z]+\))*)\b/g;
+const CONTROL_PATTERN = /\b([A-Za-z]{2}-\d{1,3}(?:\([\dA-Za-z]+\))*)\b/gi;
 
 export function findControlIds(text: string): string[] {
   const matches = new Set<string>();
   let match: RegExpExecArray | null;
   while ((match = CONTROL_PATTERN.exec(text)) !== null) {
-    matches.add(match[1]);
+    matches.add(match[1].toUpperCase());
   }
   return [...matches];
 }
