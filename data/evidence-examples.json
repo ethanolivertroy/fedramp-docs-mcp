@@ -999,7 +999,11 @@
         {
           "type": "configuration",
           "description": "Automated account protection rules",
+          "tip": "Configure automated detection of suspicious login behavior: impossible travel, unusual devices, anomalous access patterns. Alert and block high-risk activity automatically.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName=\"google.login.LoginService.loginSuccess\" AND severity>=WARNING' --format=json", "description": "GCP Cloud Identity suspicious login events"},
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category:(\"IAM_ANOMALOUS_GRANT\" OR \"BRUTE_FORCE_SSH\" OR \"ACCOUNT_HAS_LEAKED_CREDENTIALS\")'", "description": "GCP SCC IAM-related suspicious activity findings"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=category:IAM*", "description": "GCP SCC IAM threat findings API"},
             {"provider": "okta", "api": "/api/v1/behaviors", "description": "Okta behavior detection rules"},
             {"provider": "azure", "api": "/v1.0/identityProtection/riskDetections", "description": "Entra ID risk detections"},
             {"provider": "aws", "command": "aws guardduty list-findings --detector-id <id>", "description": "GuardDuty IAM-related findings"}
