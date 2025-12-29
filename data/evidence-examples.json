@@ -371,10 +371,25 @@
         {
           "type": "scan",
           "description": "Attack surface analysis",
+          "tip": "Identify all external-facing assets and open ports. Every public endpoint is attack surface. Regularly audit for unintended exposure and unused services.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instances list --filter='networkInterfaces.accessConfigs:*' --format='table(name,zone,networkInterfaces[0].accessConfigs[0].natIP)'", "description": "GCP VMs with external IPs"},
+            {"provider": "gcp", "command": "gcloud compute forwarding-rules list --format='table(name,IPAddress,target)'", "description": "GCP load balancer external IPs"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=category=\"PUBLIC_IP_ADDRESS\"", "description": "GCP SCC public IP findings"},
             {"provider": "trivy", "command": "trivy image --severity HIGH,CRITICAL <image>", "description": "Container vulnerability scan"},
             {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[].{id:InstanceId,ports:SecurityGroups}'", "description": "Exposed instance analysis"},
-            {"provider": "shodan", "api": "/shodan/host/{ip}", "description": "External exposure analysis"}
+            {"provider": "shodan", "api": "/shodan/host/{ip}", "description": "External exposure analysis"},
+            {"provider": "nuclei", "command": "nuclei -l urls.txt -t cves/", "description": "Nuclei vulnerability scanning"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Public asset inventory",
+          "tip": "Maintain a complete inventory of externally accessible resources. Compare against intended public assets - any delta is a risk.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-resources --scope=organizations/<org> --query='networkTags:public OR labels.public:*'", "description": "GCP Cloud Asset Inventory search"},
+            {"provider": "aws", "command": "aws ec2 describe-instances --filters 'Name=ip-address,Values=*' --query 'Reservations[].Instances[].PublicIpAddress'", "description": "AWS public IP inventory"},
+            {"provider": "azure", "command": "az network public-ip list --query '[].{name:name,ip:ipAddress,resource:id}'", "description": "Azure public IP inventory"}
           ]
         }
       ]
@@ -385,10 +400,24 @@
         {
           "type": "log",
           "description": "Network flow logs",
+          "tip": "VPC Flow Logs must be enabled on all subnets. Retain logs for at least 1 year. Analyze for unauthorized traffic patterns and denied connections.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute networks subnets list --format='table(name,region,enableFlowLogs,logConfig.aggregationInterval)'", "description": "GCP VPC Flow Logs configuration per subnet"},
+            {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"gce_subnetwork\" AND logName:\"logs/compute.googleapis.com%2Fvpc_flows\"' --limit=100 --format=json", "description": "GCP VPC Flow Logs sample"},
             {"provider": "aws", "command": "aws ec2 describe-flow-logs", "description": "VPC Flow Logs configuration"},
             {"provider": "azure", "command": "az network watcher flow-log list", "description": "Azure Network Watcher flow logs"},
             {"provider": "manual", "artifact": "Network segmentation diagrams"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Traffic enforcement policies",
+          "tip": "Default deny should be enforced. All allowed traffic should be explicitly documented with business justification. East-west traffic should be as restricted as north-south.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud compute firewall-rules list --format='table(name,network,direction,priority,denied)'", "description": "GCP deny rules"},
+            {"provider": "gcp", "command": "gcloud compute firewall-policies rules list --firewall-policy=<policy>", "description": "GCP hierarchical firewall policies"},
+            {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o yaml", "description": "Kubernetes NetworkPolicies"},
+            {"provider": "calico", "command": "calicoctl get globalnetworkpolicies -o yaml", "description": "Calico network policies"}
           ]
         }
       ]
@@ -399,10 +428,24 @@
         {
           "type": "configuration",
           "description": "Immutable infrastructure evidence",
+          "tip": "Verify infrastructure is replaced, not modified. No SSH/RDP access in production. All changes via IaC pipeline. Container images should use digests, not mutable tags.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instance-templates list --format='table(name,creationTimestamp,properties.disks[0].source)'", "description": "GCP instance templates for immutable VMs"},
+            {"provider": "gcp", "command": "gcloud container images list-tags <image> --format='table(digest,timestamp)'", "description": "GCP Container Registry image digests"},
+            {"provider": "gcp", "command": "gcloud compute instances list --format='table(name,creationTimestamp,scheduling.preemptible)'", "description": "GCP VM creation dates (old VMs may indicate drift)"},
             {"provider": "aws", "command": "aws ec2 describe-launch-templates", "description": "EC2 launch templates"},
             {"provider": "docker", "command": "docker images --format '{{.Repository}}:{{.Tag}}@{{.Digest}}'", "description": "Immutable container images"},
             {"provider": "terraform", "command": "terraform show -json", "description": "Infrastructure as Code state"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Infrastructure change audit",
+          "tip": "Monitor for manual changes that bypass IaC. Any drift from declared state is a compliance risk. Alert on SSH/RDP connections to production.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"compute.instances.insert\" OR \"compute.instances.setMetadata\")' --format=json", "description": "GCP Compute Engine change audit"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventSource,AttributeValue=ec2.amazonaws.com", "description": "AWS EC2 API calls"},
+            {"provider": "driftctl", "command": "driftctl scan --from tfstate://terraform.tfstate", "description": "Driftctl IaC drift detection"}
           ]
         }
       ]
@@ -413,10 +456,33 @@
         {
           "type": "configuration",
           "description": "DDoS and abuse protection",
+          "tip": "All external endpoints should have DDoS protection (Cloud Armor, Shield, Cloudflare). WAF should block OWASP Top 10. Rate limiting should be enabled.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute security-policies list --format='table(name,type,rules.len())'", "description": "GCP Cloud Armor security policies"},
+            {"provider": "gcp", "command": "gcloud compute security-policies describe <policy> --format=json", "description": "GCP Cloud Armor policy rules detail"},
+            {"provider": "gcp", "command": "gcloud compute backend-services list --format='table(name,securityPolicy)'", "description": "GCP backend services with Cloud Armor"},
             {"provider": "aws", "command": "aws shield describe-protection", "description": "AWS Shield protection status"},
             {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"},
             {"provider": "aws", "command": "aws wafv2 list-web-acls --scope REGIONAL", "description": "WAF configuration"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Attack and abuse detection logs",
+          "tip": "Monitor blocked requests, rate limit triggers, and bot detection. Correlate with threat intelligence. Alert on sustained attack patterns.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"http_load_balancer\" AND jsonPayload.enforcedSecurityPolicy.outcome=\"DENY\"' --format=json", "description": "GCP Cloud Armor blocked requests"},
+            {"provider": "aws", "command": "aws wafv2 get-sampled-requests --web-acl-arn <arn> --rule-metric-name ALL --scope REGIONAL --time-window Start=<start>,End=<end> --max-items 100", "description": "AWS WAF sampled requests"},
+            {"provider": "cloudflare", "api": "/zones/{zone_id}/firewall/events", "description": "Cloudflare firewall events"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Attack volume and mitigation metrics",
+          "tip": "Track attack frequency, types, and sources. Measure time to detect and mitigate. Report on false positive rates to ensure legitimate traffic isn't blocked.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring metrics list --filter='metric.type=starts_with(\"loadbalancing.googleapis.com/\")'", "description": "GCP LB metrics including Cloud Armor"},
+            {"provider": "datadog", "api": "/api/v1/query?query=sum:waf.blocked_requests{*}", "description": "WAF blocked request trends"}
           ]
         }
       ]
@@ -512,9 +578,22 @@
         {
           "type": "configuration",
           "description": "Passwordless authentication settings",
+          "tip": "Passwordless methods must still be phishing-resistant. FIDO2/WebAuthn qualifies; magic links and SMS OTP do not. Verify fallback methods don't reintroduce password risk.",
           "sources": [
+            {"provider": "gcp", "api": "admin.googleapis.com/admin/directory/v1/users/{userKey}/twoStepVerification", "description": "Google Workspace passwordless (passkeys) enrollment"},
+            {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=<group> --format='table(preferredMemberKey.id,roles)'", "description": "GCP Cloud Identity member authentication status"},
             {"provider": "azure", "api": "/v1.0/policies/authenticationMethodsPolicy", "description": "Entra ID passwordless methods"},
-            {"provider": "okta", "api": "/api/v1/authenticators", "description": "Okta authenticator configuration"}
+            {"provider": "okta", "api": "/api/v1/authenticators", "description": "Okta authenticator configuration"},
+            {"provider": "duo", "api": "/admin/v1/users/{user_id}/webauthncredentials", "description": "Duo WebAuthn credentials"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Passwordless adoption rate",
+          "tip": "Track percentage of users on passwordless vs password-based auth. Goal should be 100% passwordless for privileged users, high adoption for all users.",
+          "sources": [
+            {"provider": "azure", "api": "/v1.0/reports/authenticationMethods/usersRegisteredByMethod", "description": "Entra ID authentication method registration stats"},
+            {"provider": "okta", "api": "/api/v1/org/factors/catalog", "description": "Okta factor enrollment statistics"}
           ]
         }
       ]
@@ -525,10 +604,32 @@
         {
           "type": "inventory",
           "description": "Service account inventory",
+          "tip": "Every service account needs an owner and documented purpose. Flag accounts with no recent activity (stale) or overly broad permissions. Workload identity (no keys) is preferred over key-based auth.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud iam service-accounts list --format='table(email,displayName,disabled)'", "description": "GCP service account inventory"},
+            {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --query='policy:serviceAccount' --format=json", "description": "GCP service account IAM bindings"},
             {"provider": "aws", "command": "aws iam list-roles --query 'Roles[?contains(RoleName,`service`)]'", "description": "AWS service roles"},
             {"provider": "azure", "command": "az ad sp list --filter \"servicePrincipalType eq 'Application'\"", "description": "Azure service principals"},
             {"provider": "kubernetes", "command": "kubectl get serviceaccounts --all-namespaces -o json", "description": "Kubernetes service accounts"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Service account key usage",
+          "tip": "Monitor for service account key creation/download events - prefer workload identity over keys. Alert on keys older than 90 days.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"CreateServiceAccountKey\" OR \"google.iam.admin.v1.GetServiceAccountKey\")' --format=json", "description": "GCP service account key operations"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateAccessKey", "description": "AWS access key creation events"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Workload identity configuration",
+          "tip": "Workload Identity Federation eliminates long-lived credentials. Verify GKE workloads use Workload Identity, not node service accounts.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud container clusters describe <cluster> --format='value(workloadIdentityConfig)'", "description": "GKE Workload Identity status"},
+            {"provider": "gcp", "command": "gcloud iam workload-identity-pools list --location=global", "description": "GCP Workload Identity Federation pools"},
+            {"provider": "aws", "command": "aws iam list-open-id-connect-providers", "description": "AWS OIDC providers for workload identity"}
           ]
         }
       ]
@@ -539,10 +640,33 @@
         {
           "type": "log",
           "description": "JIT access requests and approvals",
+          "tip": "JIT access should require approval for privileged roles, have short TTLs (1-8 hours typical), and auto-revoke. Verify no standing admin access exists.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"google.cloud.policytroubleshooter\" OR \"SetIamPolicy\") AND protoPayload.request.policy.bindings.condition' --format=json", "description": "GCP conditional IAM bindings (time-based access)"},
+            {"provider": "gcp", "api": "iam.googleapis.com/v1/projects/{project}/serviceAccounts/{sa}:getIamPolicy", "description": "GCP IAM policy with conditions"},
             {"provider": "cyberark", "api": "/PasswordVault/API/AccountsRequests", "description": "CyberArk access requests"},
             {"provider": "azure", "api": "/v1.0/identityGovernance/privilegedAccess/group/assignmentRequests", "description": "Azure PIM requests"},
-            {"provider": "hashicorp", "api": "/v1/sys/leases/lookup", "description": "Vault lease information"}
+            {"provider": "hashicorp", "api": "/v1/sys/leases/lookup", "description": "Vault lease information"},
+            {"provider": "teleport", "api": "/v1/accessrequests", "description": "Teleport access requests"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "JIT policy configuration",
+          "tip": "Verify JIT is required for all admin/privileged roles. Maximum session duration should align with policy (typically 1-8 hours). Approval workflows should require manager or security approval.",
+          "sources": [
+            {"provider": "azure", "api": "/v1.0/policies/roleManagementPolicies", "description": "Azure PIM role settings"},
+            {"provider": "gcp", "command": "gcloud organizations get-iam-policy <org> --format=json | jq '.bindings[] | select(.condition != null)'", "description": "GCP org-level conditional bindings"},
+            {"provider": "beyondtrust", "api": "/api/v3/access-policies", "description": "BeyondTrust Privilege Management policies"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Standing privilege elimination",
+          "tip": "Track percentage of admin access that is JIT vs standing. Goal is 0% standing admin access. Measure average access duration and approval times.",
+          "sources": [
+            {"provider": "azure", "api": "/v1.0/reports/authenticationMethods/usersRegisteredByFeature", "description": "PIM usage statistics"},
+            {"provider": "manual", "artifact": "JIT adoption metrics dashboard"}
           ]
         }
       ]
@@ -553,10 +677,35 @@
         {
           "type": "report",
           "description": "Access review and permission analysis",
+          "tip": "Look for overly permissive policies: '*' actions, unused permissions, cross-account access. IAM Recommender and Access Analyzer identify these automatically.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud recommender recommendations list --recommender=google.iam.policy.Recommender --project=<project> --format='table(name,description,primaryImpact.category)'", "description": "GCP IAM Recommender suggestions"},
+            {"provider": "gcp", "command": "gcloud policy-intelligence query-activity --project=<project> --limit=100", "description": "GCP Policy Intelligence activity analysis"},
+            {"provider": "gcp", "api": "recommender.googleapis.com/v1/projects/{project}/locations/global/recommenders/google.iam.policy.Recommender/recommendations", "description": "GCP IAM policy recommendations API"},
             {"provider": "aws", "command": "aws accessanalyzer list-findings --analyzer-arn <arn>", "description": "IAM Access Analyzer findings"},
             {"provider": "azure", "command": "az role assignment list --all", "description": "Azure RBAC assignments"},
             {"provider": "manual", "artifact": "Quarterly access review records"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Role and permission definitions",
+          "tip": "Custom roles should be preferred over primitive roles (Owner/Editor/Viewer). Verify no users have Owner role in production projects.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud projects get-iam-policy <project> --format='table(bindings.role,bindings.members)'", "description": "GCP project IAM policy"},
+            {"provider": "gcp", "command": "gcloud iam roles list --project=<project> --format='table(name,title,stage)'", "description": "GCP custom roles inventory"},
+            {"provider": "aws", "command": "aws iam list-attached-user-policies --user-name <user>", "description": "AWS user attached policies"},
+            {"provider": "azure", "command": "az role definition list --custom-role-only", "description": "Azure custom role definitions"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Excessive permission detection",
+          "tip": "Scan for dormant permissions (granted but never used), admin access to non-admin resources, and service accounts with user-level roles.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --query='policy.role.permissions:*' --format=json", "description": "GCP Cloud Asset Inventory IAM search"},
+            {"provider": "aws", "command": "aws iam generate-service-last-accessed-details --arn <arn>", "description": "AWS service last accessed details"},
+            {"provider": "bridgecrew", "api": "/api/v1/suppressions", "description": "Bridgecrew/Checkov least privilege findings"}
           ]
         }
       ]
