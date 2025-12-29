@@ -20,7 +20,10 @@ import {
   detectIdKey,
   envBoolean,
   extractControlLikeStrings,
+  findControlIds,
+  getFieldCI,
   guessFrmrTypeFromFilename,
+  isItemArrayKey,
   normalizePath,
   sha256,
   unique,
@@ -185,7 +188,7 @@ interface ExtractedItem {
 
 /**
  * Recursively extract all items from nested FRMR JSON structure.
- * Handles both new (requirements, indicators, ALL) and legacy (items, entries, controls, records) formats.
+ * Uses flexible pattern matching to handle various item array naming conventions.
  */
 function extractAllItems(
   obj: unknown,
@@ -194,29 +197,15 @@ function extractAllItems(
   const results: ExtractedItem[] = [];
   if (!obj || typeof obj !== "object") return results;
 
-  // Keys that contain item arrays
-  const itemArrayKeys = new Set([
-    // New FRMR 2025 structure
-    "requirements",
-    "indicators",
-    "ALL",
-    // Legacy structure (for backwards compatibility)
-    "items",
-    "entries",
-    "controls",
-    "records",
-  ]);
-
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    // Skip metadata keys
-    if (["$schema", "$id", "info", "metadata"].includes(key)) continue;
+    // Skip metadata keys (case-insensitive)
+    const keyLower = key.toLowerCase();
+    if (["$schema", "$id", "info", "metadata"].includes(keyLower)) continue;
 
-    // Found an array of items
-    if (itemArrayKeys.has(key)) {
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          results.push({ item, category: parentCategory });
-        }
+    // Found an array of items (using flexible pattern matching)
+    if (isItemArrayKey(key) && Array.isArray(value)) {
+      for (const item of value) {
+        results.push({ item, category: parentCategory });
       }
     } else if (typeof value === "object" && value !== null) {
       // Recurse into nested objects, passing current key as potential category
@@ -281,6 +270,54 @@ function coerceStringArray(
   return undefined;
 }
 
+/**
+ * Extract control IDs from an item, prioritizing structured data over text scanning.
+ *
+ * Priority 1: Parse structured 'controls' array (FRMR 2025 format)
+ *   e.g., { controls: [{ control_id: "ac-2", title: "..." }] }
+ *
+ * Priority 2: Text scan specific fields only (reduces noise)
+ */
+function extractStructuredControls(item: Record<string, unknown>): string[] {
+  const controls: string[] = [];
+
+  // Priority 1: Structured controls array (FRMR 2025 format)
+  const controlsArray = getFieldCI<unknown[]>(item, "controls", "control_mappings", "nist_controls");
+  if (Array.isArray(controlsArray)) {
+    for (const ctrl of controlsArray) {
+      if (ctrl && typeof ctrl === "object") {
+        const ctrlObj = ctrl as Record<string, unknown>;
+        // Try multiple field names for control ID
+        const id = getFieldCI<string>(ctrlObj, "control_id", "controlId", "id", "control");
+        if (typeof id === "string") {
+          controls.push(id.toUpperCase());
+        }
+      } else if (typeof ctrl === "string") {
+        // Direct string control IDs
+        controls.push(ctrl.toUpperCase());
+      }
+    }
+  }
+
+  // Priority 2: Text scanning on specific fields only (reduces noise)
+  const textFields = ["statement", "description", "requirements", "text", "control_mapping"];
+  for (const field of textFields) {
+    const value = getFieldCI<unknown>(item, field);
+    if (typeof value === "string") {
+      controls.push(...findControlIds(value));
+    } else if (Array.isArray(value)) {
+      // Handle arrays of strings (e.g., requirements)
+      for (const v of value) {
+        if (typeof v === "string") {
+          controls.push(...findControlIds(v));
+        }
+      }
+    }
+  }
+
+  return unique(controls);
+}
+
 function buildKsiItems(
   doc: FrmrDocumentRecord,
   items: unknown[],
@@ -339,7 +376,7 @@ function buildKsiItems(
               ? item.source
               : undefined,
       requirements: coerceStringArray(item.requirements),
-      controlMapping: unique(extractControlLikeStrings(item)),
+      controlMapping: extractStructuredControls(item),
       evidenceExamples: coerceStringArray(item.evidence_examples),
       references: referencesValue?.map((ref) => ({
         type:

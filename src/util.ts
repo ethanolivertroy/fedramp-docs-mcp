@@ -68,6 +68,40 @@ export function detectIdKey(obj: unknown): string | null {
   return null;
 }
 
+/**
+ * Case-insensitive field lookup. Searches object keys for any of the provided
+ * field names, ignoring case. Returns the first match found.
+ */
+export function getFieldCI<T>(
+  obj: Record<string, unknown>,
+  ...names: string[]
+): T | undefined {
+  for (const [key, value] of Object.entries(obj)) {
+    const keyLower = key.toLowerCase();
+    for (const name of names) {
+      if (keyLower === name.toLowerCase()) {
+        return value as T;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Check if a key matches known item array patterns (case-insensitive).
+ * Patterns: items, entries, records, controls, requirements, indicators, definitions, rules, mappings, ALL
+ */
+const ITEM_ARRAY_PATTERNS = [
+  /^(items?|entries|records|controls)$/i,
+  /^(requirements?|indicators?)$/i,
+  /^(definitions?|rules?|mappings?)$/i,
+  /^all$/i,
+];
+
+export function isItemArrayKey(key: string): boolean {
+  return ITEM_ARRAY_PATTERNS.some((pattern) => pattern.test(key));
+}
+
 export function extractControlLikeStrings(input: unknown): string[] {
   if (typeof input === "string") {
     return findControlIds(input);
