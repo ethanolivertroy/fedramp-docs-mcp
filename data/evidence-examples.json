@@ -829,10 +829,22 @@
         {
           "type": "log",
           "description": "Log review evidence",
+          "tip": "Log reviews should be documented with findings, actions taken, and sign-off. Automated anomaly detection supplements but doesn't replace human review.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'logName:\"logs/cloudaudit.googleapis.com\"' --limit=100 --format=json", "description": "GCP Cloud Audit Logs"},
+            {"provider": "gcp", "command": "gcloud logging sinks list --format='table(name,destination,filter)'", "description": "GCP audit log export sinks"},
             {"provider": "splunk", "api": "/services/saved/searches", "description": "Splunk scheduled searches"},
             {"provider": "manual", "artifact": "Log review records and findings"},
             {"provider": "azure", "command": "az monitor log-analytics query -w <workspace-id> --analytics-query <query>", "description": "Log Analytics query results"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Audit log configuration",
+          "tip": "Verify audit logs capture all admin actions, authentication events, and data access. GCP Data Access logs may need explicit enablement.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud projects get-iam-policy <project> --format=json | jq '.auditConfigs'", "description": "GCP Data Access audit log configuration"},
+            {"provider": "gcp", "command": "gcloud organizations get-iam-policy <org> --format=json | jq '.auditConfigs'", "description": "GCP org-level audit config"}
           ]
         }
       ]
@@ -843,10 +855,23 @@
         {
           "type": "configuration",
           "description": "Log tamper protection",
+          "tip": "Logs must be immutable - use locked retention policies, write-once storage, or cryptographic validation. No one (including admins) should be able to delete or modify historical logs.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud storage buckets describe gs://<bucket> --format='value(retentionPolicy,iamConfiguration.bucketPolicyOnly)'", "description": "GCP Cloud Storage retention policy"},
+            {"provider": "gcp", "command": "gcloud logging buckets describe <bucket> --location=<location> --format='value(locked,retentionDays)'", "description": "GCP Log bucket lock status"},
+            {"provider": "gcp", "command": "gcloud logging buckets update <bucket> --location=<location> --locked", "description": "GCP Lock log bucket (prevents deletion)"},
             {"provider": "aws", "command": "aws cloudtrail describe-trails --query 'trailList[].{Name:Name,LogFileValidation:LogFileValidationEnabled}'", "description": "CloudTrail log validation"},
             {"provider": "aws", "command": "aws s3api get-bucket-versioning --bucket <bucket>", "description": "S3 log bucket versioning"},
             {"provider": "azure", "command": "az storage account show --name <account> --query 'immutableStorageWithVersioning'", "description": "Azure immutable storage"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Log integrity validation evidence",
+          "tip": "Regularly validate log integrity (hashes, checksums). Alert on any validation failures or gaps in log continuity.",
+          "sources": [
+            {"provider": "aws", "command": "aws cloudtrail validate-logs --trail-arn <arn> --start-time <start>", "description": "CloudTrail log validation results"},
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:\"storage.objects.delete\" AND resource.labels.bucket_name:<log-bucket>'", "description": "GCP log deletion attempt monitoring"}
           ]
         }
       ]
@@ -857,10 +882,22 @@
         {
           "type": "configuration",
           "description": "Log retention policies",
+          "tip": "FedRAMP requirements: Low=90 days, Moderate=1 year online + 3 years archived, High=1 year online + 6 years archived. Verify ALL log sources meet these thresholds.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging buckets list --format='table(name,retentionDays,locked)'", "description": "GCP Log bucket retention settings"},
+            {"provider": "gcp", "command": "gcloud storage buckets describe gs://<bucket> --format='value(lifecycle)'", "description": "GCP Cloud Storage lifecycle (for archived logs)"},
             {"provider": "aws", "command": "aws logs describe-log-groups --query 'logGroups[].{name:logGroupName,retention:retentionInDays}'", "description": "CloudWatch Logs retention"},
             {"provider": "splunk", "api": "/services/data/indexes", "description": "Splunk index retention settings"},
             {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <ws> --query 'retentionInDays'", "description": "Log Analytics retention"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Log source retention mapping",
+          "tip": "Document retention period for each log source. Any source below required threshold is a compliance gap. Include archived/cold storage in retention calculations.",
+          "sources": [
+            {"provider": "manual", "artifact": "Log retention matrix by source and impact level"},
+            {"provider": "gcp", "command": "gcloud logging sinks list --format='table(name,destination)'", "description": "GCP log export destinations (for retention verification)"}
           ]
         }
       ]
@@ -871,10 +908,32 @@
         {
           "type": "scan",
           "description": "IaC security scanning results",
+          "tip": "IaC scanning should run on every PR/commit. Block merges on HIGH/CRITICAL findings. Track findings over time to show improvement.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud builds list --filter='substitutions.TRIGGER_NAME:*security*' --format='table(id,status,createTime)'", "description": "GCP Cloud Build security scan runs"},
             {"provider": "checkov", "command": "checkov -d . --output json", "description": "Checkov IaC scan"},
             {"provider": "tfsec", "command": "tfsec . --format json", "description": "tfsec Terraform scan"},
-            {"provider": "kics", "command": "kics scan -p . -o json", "description": "KICS IaC scan"}
+            {"provider": "kics", "command": "kics scan -p . -o json", "description": "KICS IaC scan"},
+            {"provider": "snyk", "command": "snyk iac test --json", "description": "Snyk IaC scanning"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "IaC pipeline integration",
+          "tip": "Verify IaC scanning is mandatory in CI/CD. Check that bypass requires approval. All infrastructure changes should flow through IaC (no manual changes).",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud builds triggers list --format='table(name,github.owner,github.name)'", "description": "GCP Cloud Build triggers"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/branches/{branch}/protection", "description": "GitHub branch protection with required checks"},
+            {"provider": "gitlab", "api": "/projects/{id}/merge_request_approval_rules", "description": "GitLab MR approval rules"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "IaC scan findings trends",
+          "tip": "Show declining trend in IaC findings over time. Track time-to-remediate for identified issues. Report on scan coverage (% of repos scanned).",
+          "sources": [
+            {"provider": "bridgecrew", "api": "/api/v1/suppressions/justifications", "description": "Bridgecrew suppression justifications"},
+            {"provider": "snyk", "api": "/org/{orgId}/project/{projectId}/history", "description": "Snyk project issue history"}
           ]
         }
       ]
@@ -885,10 +944,33 @@
         {
           "type": "configuration",
           "description": "Security alerting configuration",
+          "tip": "Critical security alerts should page on-call 24/7. Verify escalation paths exist. Test alerting regularly (fire drills). Alert fatigue indicates tuning needed.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --format='table(displayName,enabled,notificationChannels)'", "description": "GCP Cloud Monitoring alert policies"},
+            {"provider": "gcp", "command": "gcloud monitoring channels list --format='table(displayName,type,enabled)'", "description": "GCP notification channels"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/notificationConfigs", "description": "GCP SCC notification configs"},
             {"provider": "aws", "command": "aws cloudwatch describe-alarms --alarm-types MetricAlarm", "description": "CloudWatch alarms"},
             {"provider": "pagerduty", "api": "/services", "description": "PagerDuty service integrations"},
             {"provider": "splunk", "api": "/services/alerts/fired_alerts", "description": "Splunk alert history"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Alert response evidence",
+          "tip": "Document response to every critical alert. Track Mean Time to Acknowledge (MTTA) and Mean Time to Resolve (MTTR). Alerts without response are compliance gaps.",
+          "sources": [
+            {"provider": "pagerduty", "api": "/incidents", "description": "PagerDuty incident history with response times"},
+            {"provider": "opsgenie", "api": "/v2/alerts", "description": "OpsGenie alert history"},
+            {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"cloud_function\" AND severity>=ERROR'", "description": "GCP alert function executions"}
+          ]
+        },
+        {
+          "type": "metrics",
+          "description": "Alerting health metrics",
+          "tip": "Track alert volume, false positive rate, and response times. High volume or low response rate indicates problems. Report on alert coverage (% of critical systems monitored).",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='enabled=true' --format='value(displayName)' | wc -l", "description": "GCP active alert count"},
+            {"provider": "datadog", "api": "/api/v1/monitor", "description": "Datadog monitor inventory"}
           ]
         }
       ]
