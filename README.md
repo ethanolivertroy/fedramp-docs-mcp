@@ -265,6 +265,26 @@ Add the server to your Claude Desktop configuration file:
 
 **Location:** `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
 
+**Option 1: Using npx (Recommended - no install required)**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "npx",
+      "args": ["fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+**Option 2: Global installation**
+```bash
+npm install -g fedramp-docs-mcp
+```
+
 ```json
 {
   "mcpServers": {
@@ -671,7 +691,7 @@ The codebase uses:
 - **ES Modules** (`"type": "module"` in package.json)
 - **Node.js module resolution** (`moduleResolution: "NodeNext"`)
 - **Zod** for runtime schema validation
-- **MCP SDK v1.20+** for server implementation
+- **MCP SDK v1.24+** for server implementation
 
 ## Project Structure
 
