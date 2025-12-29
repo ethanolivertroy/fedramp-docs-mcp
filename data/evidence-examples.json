@@ -730,7 +730,13 @@
             {"provider": "aws", "command": "aws wafv2 list-web-acls --scope REGIONAL", "description": "WAF configuration"},
             {"provider": "azure", "command": "az network ddos-protection list --query '[].{name:name,state:provisioningState}'", "description": "Azure DDoS Protection Plans"},
             {"provider": "azure", "command": "az network application-gateway waf-policy list --query '[].{name:name,mode:policySettings.mode}'", "description": "Azure WAF policies"},
-            {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"}
+            {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"},
+            {"provider": "akamai", "api": "/appsec/v1/configs", "description": "Akamai Web Application Firewall configurations"},
+            {"provider": "akamai", "api": "/network-lists/v2/network-lists", "description": "Akamai network lists (IP blocking)"},
+            {"provider": "akamai", "api": "/siteshield/v1/maps", "description": "Akamai Site Shield origin protection"},
+            {"provider": "zscaler", "api": "/urlFilteringRules", "description": "Zscaler ZIA URL filtering rules"},
+            {"provider": "zscaler", "api": "/firewallPolicies", "description": "Zscaler ZIA firewall policies"},
+            {"provider": "zscaler", "api": "/advancedThreatProtection", "description": "Zscaler advanced threat protection settings"}
           ]
         },
         {
@@ -741,7 +747,9 @@
             {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"http_load_balancer\" AND jsonPayload.enforcedSecurityPolicy.outcome=\"DENY\"' --format=json", "description": "GCP Cloud Armor blocked requests"},
             {"provider": "aws", "command": "aws wafv2 get-sampled-requests --web-acl-arn <arn> --rule-metric-name ALL --scope REGIONAL --time-window Start=<start>,End=<end> --max-items 100", "description": "AWS WAF sampled requests"},
             {"provider": "azure", "command": "az monitor activity-log list --resource-provider Microsoft.Network --query '[?contains(operationName.value,`DDoS`)].{time:eventTimestamp,operation:operationName.value}'", "description": "Azure DDoS events"},
-            {"provider": "cloudflare", "api": "/zones/{zone_id}/firewall/events", "description": "Cloudflare firewall events"}
+            {"provider": "cloudflare", "api": "/zones/{zone_id}/firewall/events", "description": "Cloudflare firewall events"},
+            {"provider": "akamai", "api": "/siem/v1/configs/{configId}/events", "description": "Akamai SIEM security events"},
+            {"provider": "akamai", "api": "/appsec/v1/security-events", "description": "Akamai WAF attack logs"}
           ]
         },
         {
@@ -867,7 +875,9 @@
             {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=<group> --format='table(preferredMemberKey.id,roles)'", "description": "GCP Cloud Identity member authentication status"},
             {"provider": "azure", "api": "/v1.0/policies/authenticationMethodsPolicy", "description": "Entra ID passwordless methods"},
             {"provider": "okta", "api": "/api/v1/authenticators", "description": "Okta authenticator configuration"},
-            {"provider": "duo", "api": "/admin/v1/users/{user_id}/webauthncredentials", "description": "Duo WebAuthn credentials"}
+            {"provider": "duo", "api": "/admin/v1/users/{user_id}/webauthncredentials", "description": "Duo WebAuthn credentials"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/query?q=SELECT+Id,Name+FROM+TwoFactorInfo", "description": "Salesforce MFA enrollment status"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/tooling/query?q=SELECT+Id,DeveloperName+FROM+SessionSettings", "description": "Salesforce session security settings"}
           ]
         },
         {
@@ -1135,7 +1145,13 @@
             {"provider": "gcp", "command": "gcloud logging sinks list --format='table(name,destination,filter)'", "description": "GCP Cloud Logging sinks"},
             {"provider": "gcp", "command": "gcloud logging buckets describe _Default --location=global --format='value(retentionDays)'", "description": "GCP log bucket retention"},
             {"provider": "aws", "command": "aws logs describe-log-groups --query 'logGroups[*].{Name:logGroupName,Retention:retentionInDays}'", "description": "CloudWatch Logs retention settings"},
-            {"provider": "chronicle", "api": "/v1/detect/rules", "description": "Google Chronicle detection rules"}
+            {"provider": "chronicle", "api": "/v1/detect/rules", "description": "Google Chronicle detection rules"},
+            {"provider": "akamai", "api": "/siem/v1/configs", "description": "Akamai SIEM integration configurations"},
+            {"provider": "akamai", "api": "/datastream/v2/streams", "description": "Akamai DataStream log delivery"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/query?q=SELECT+Id,LogDate+FROM+EventLogFile", "description": "Salesforce Event Monitoring logs"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/query?q=SELECT+Id,Action+FROM+SetupAuditTrail", "description": "Salesforce Setup Audit Trail"},
+            {"provider": "zscaler", "api": "/webApplicationRules", "description": "Zscaler ZIA policy configurations"},
+            {"provider": "zscaler", "api": "/adminAuditLogs", "description": "Zscaler admin audit logs"}
           ]
         },
         {
@@ -1157,7 +1173,9 @@
           "sources": [
             {"provider": "splunk", "api": "/services/server/introspection/indexer", "description": "Splunk indexer health metrics"},
             {"provider": "datadog", "api": "/api/v1/logs/analytics/aggregate", "description": "Datadog log analytics"},
-            {"provider": "sumo", "api": "/api/v1/collectors", "description": "Sumo Logic collector status"}
+            {"provider": "sumo", "api": "/api/v1/collectors", "description": "Sumo Logic collector status"},
+            {"provider": "newrelic", "api": "/v2/applications.json", "description": "New Relic monitored applications"},
+            {"provider": "newrelic", "api": "/v2/alerts_policies.json", "description": "New Relic alert policies"}
           ]
         }
       ]
@@ -1227,7 +1245,9 @@
             {"provider": "gcp", "command": "gcloud storage buckets describe gs://<bucket> --format='value(lifecycle)'", "description": "GCP Cloud Storage lifecycle (for archived logs)"},
             {"provider": "aws", "command": "aws logs describe-log-groups --query 'logGroups[].{name:logGroupName,retention:retentionInDays}'", "description": "CloudWatch Logs retention"},
             {"provider": "splunk", "api": "/services/data/indexes", "description": "Splunk index retention settings"},
-            {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <ws> --query 'retentionInDays'", "description": "Log Analytics retention"}
+            {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <ws> --query 'retentionInDays'", "description": "Log Analytics retention"},
+            {"provider": "newrelic", "api": "/graphql (data retention query)", "description": "New Relic data retention settings"},
+            {"provider": "datadog", "api": "/api/v2/logs/config/data-retention", "description": "Datadog log retention configuration"}
           ]
         },
         {
@@ -1373,7 +1393,9 @@
             {"provider": "gcp", "api": "cloudasset.googleapis.com/v1/organizations/{org}/assets?contentType=RESOURCE", "description": "GCP Cloud Asset API - full inventory export"},
             {"provider": "aws", "command": "aws configservice list-discovered-resources --resource-type AWS::EC2::Instance", "description": "AWS Config discovered resources"},
             {"provider": "azure", "command": "az graph query -q 'Resources | summarize count() by type'", "description": "Azure Resource Graph inventory"},
-            {"provider": "servicenow", "api": "/api/now/table/cmdb_ci", "description": "ServiceNow CMDB"}
+            {"provider": "servicenow", "api": "/api/now/table/cmdb_ci", "description": "ServiceNow CMDB"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/limits", "description": "Salesforce org limits and usage"},
+            {"provider": "salesforce", "api": "/services/data/v59.0/query?q=SELECT+Id,Name+FROM+User", "description": "Salesforce user inventory"}
           ]
         },
         {
@@ -1765,7 +1787,9 @@
             {"provider": "azure", "command": "az network application-gateway ssl-policy show --gateway-name <gw> --resource-group <rg>", "description": "Azure App Gateway SSL policy"},
             {"provider": "azure", "command": "az keyvault certificate list --vault-name <vault> --query '[].{name:name,expires:attributes.expires}'", "description": "Azure Key Vault certificates"},
             {"provider": "ssllabs", "api": "/api/v3/analyze?host=<domain>", "description": "SSL Labs scan results"},
-            {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"}
+            {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"},
+            {"provider": "akamai", "api": "/cps/v2/enrollments", "description": "Akamai CPS certificate enrollments"},
+            {"provider": "akamai", "api": "/hapi/v1/dns-zones/{zone}/edge-hostnames", "description": "Akamai edge hostnames with TLS config"}
           ]
         },
         {
@@ -2000,7 +2024,9 @@
             {"provider": "azure", "command": "az network application-gateway ssl-policy show --gateway-name <gw> --resource-group <rg>", "description": "Azure Application Gateway SSL/TLS policy"},
             {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.ServiceFabric/clusters/{cluster}?api-version=2023-11-01-preview", "description": "Azure Service Fabric cluster security settings"},
             {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o json", "description": "Istio PeerAuthentication policies"},
-            {"provider": "linkerd", "command": "linkerd viz stat deploy -n <namespace>", "description": "Linkerd mTLS status"}
+            {"provider": "linkerd", "command": "linkerd viz stat deploy -n <namespace>", "description": "Linkerd mTLS status"},
+            {"provider": "zscaler", "api": "/webApplicationRules", "description": "Zscaler ZIA web application rules"},
+            {"provider": "zscaler", "api": "/sslInspectionRules", "description": "Zscaler SSL inspection policies"}
           ]
         },
         {
