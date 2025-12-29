@@ -152,6 +152,7 @@ export interface EvidenceSource {
 export interface EvidenceItem {
   type: "api" | "report" | "scan" | "log" | "configuration" | "documentation" | "inventory" | "metrics";
   description: string;
+  tip?: string;
   sources: EvidenceSource[];
 }
 

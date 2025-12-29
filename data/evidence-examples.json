@@ -58,19 +58,50 @@
         {
           "type": "scan",
           "description": "Vulnerability scan results",
+          "tip": "Scans must cover all assets: VMs, containers, serverless, and web apps. FedRAMP requires authenticated scanning for accurate results. Verify scan coverage matches your asset inventory.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"VULNERABILITY\"' --format='table(finding.name,finding.severity,finding.state)'", "description": "GCP Security Command Center vulnerability findings"},
+            {"provider": "gcp", "api": "containeranalysis.googleapis.com/v1/projects/{project}/occurrences?filter=kind=\"VULNERABILITY\"", "description": "GCP Container Analysis API vulnerabilities"},
+            {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --include-tags --show-occurrences --occurrence-filter='kind=\"VULNERABILITY\"'", "description": "GCP Artifact Registry container vulnerabilities"},
             {"provider": "aws", "command": "aws inspector2 list-findings --filter-criteria '{\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}'", "description": "AWS Inspector findings"},
+            {"provider": "azure", "command": "az security assessment list --query '[?status.code==`Unhealthy`].{name:displayName,severity:metadata.severity,resource:resourceDetails.Id}'", "description": "Azure Defender assessments"},
             {"provider": "qualys", "api": "/api/2.0/fo/scan/", "description": "Qualys scan results"},
             {"provider": "nessus", "api": "/scans/{scan_id}/export", "description": "Nessus scan export"},
-            {"provider": "trivy", "command": "trivy image --format json <image>", "description": "Container vulnerability scan"}
+            {"provider": "trivy", "command": "trivy image --format json <image>", "description": "Container vulnerability scan"},
+            {"provider": "snyk", "api": "/org/{orgId}/projects", "description": "Snyk vulnerability findings across projects"}
           ]
         },
         {
           "type": "metrics",
-          "description": "Vulnerability remediation metrics",
+          "description": "Vulnerability remediation SLA compliance",
+          "tip": "FedRAMP remediation SLAs: Critical/High within 30 days, Medium within 90 days, Low within 180 days. Track Mean Time to Remediate (MTTR) and percentage meeting SLA.",
           "sources": [
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings?filter=state=\"ACTIVE\" AND category=\"VULNERABILITY\"", "description": "GCP SCC open vulnerability count over time"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=vulnerability", "description": "Vulnerability remediation tickets"},
-            {"provider": "servicenow", "api": "/api/now/table/sn_vul_vulnerable_item", "description": "ServiceNow vulnerability records"}
+            {"provider": "servicenow", "api": "/api/now/table/sn_vul_vulnerable_item", "description": "ServiceNow vulnerability records"},
+            {"provider": "defectdojo", "api": "/api/v2/findings/?active=true", "description": "DefectDojo active findings with SLA tracking"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "Vulnerability trending and risk posture",
+          "tip": "Demonstrate risk reduction over time. Show trending charts of open vulnerabilities by severity. Sudden spikes may indicate new attack surface or scanning gaps.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"VULNERABILITY\" AND state=\"ACTIVE\"' --format='table(finding.severity)' | sort | uniq -c", "description": "GCP vulnerability severity distribution"},
+            {"provider": "aws", "command": "aws inspector2 list-finding-aggregations --aggregationType SEVERITY", "description": "AWS Inspector severity aggregation"},
+            {"provider": "qualys", "api": "/api/2.0/fo/report/", "description": "Qualys trend reports"},
+            {"provider": "tenable", "api": "/workbenches/vulnerabilities", "description": "Tenable.io vulnerability workbench"}
+          ]
+        },
+        {
+          "type": "configuration",
+          "description": "Automated scanning configuration",
+          "tip": "Verify continuous/automated scanning is enabled (not just periodic). Check that all asset types are covered and new resources are automatically enrolled.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud services list --filter='config.name:containerscanning.googleapis.com OR config.name:websecurityscanner.googleapis.com'", "description": "GCP security scanning services enabled"},
+            {"provider": "aws", "command": "aws inspector2 batch-get-account-status --query 'accounts[].resourceState'", "description": "AWS Inspector resource scanning status"},
+            {"provider": "azure", "command": "az security auto-provisioning-setting list", "description": "Azure Defender auto-provisioning"},
+            {"provider": "snyk", "api": "/org/{orgId}/settings", "description": "Snyk organization scanning settings"}
           ]
         }
       ]
@@ -298,10 +329,38 @@
         {
           "type": "configuration",
           "description": "Network security configuration",
+          "tip": "Look for overly permissive rules: 0.0.0.0/0 ingress, any-to-any rules, or unused open ports. Both ingress AND egress should be restricted to least privilege.",
           "sources": [
-            {"provider": "aws", "command": "aws ec2 describe-security-groups", "description": "Security group rules"},
+            {"provider": "aws", "command": "aws ec2 describe-security-groups --query 'SecurityGroups[*].{ID:GroupId,Name:GroupName,Ingress:IpPermissions,Egress:IpPermissionsEgress}'", "description": "Security group rules with ingress/egress details"},
+            {"provider": "aws", "command": "aws ec2 describe-network-acls --query 'NetworkAcls[*].{ID:NetworkAclId,Entries:Entries}'", "description": "Network ACL rules"},
             {"provider": "azure", "command": "az network nsg list --query '[].{name:name,rules:securityRules}'", "description": "NSG rules"},
-            {"provider": "gcp", "command": "gcloud compute firewall-rules list --format=json", "description": "GCP firewall rules"}
+            {"provider": "azure", "command": "az network nsg rule list --nsg-name <nsg> --resource-group <rg>", "description": "Detailed NSG rule analysis"},
+            {"provider": "gcp", "command": "gcloud compute firewall-rules list --format='table(name,network,direction,priority,sourceRanges,allowed)'", "description": "GCP firewall rules with source ranges"},
+            {"provider": "gcp", "command": "gcloud compute firewall-rules describe <rule> --format=json", "description": "Detailed firewall rule config"},
+            {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o yaml", "description": "Kubernetes NetworkPolicies"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Public exposure analysis",
+          "tip": "Scan for unintended public exposure. Any resource reachable from 0.0.0.0/0 should be explicitly justified in documentation.",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[?PublicIpAddress!=null].{ID:InstanceId,PublicIP:PublicIpAddress}'", "description": "EC2 instances with public IPs"},
+            {"provider": "prowler", "command": "prowler aws --check ec2_securitygroup_allow_ingress_from_internet_to_any_port", "description": "Prowler public exposure check"},
+            {"provider": "gcp", "command": "gcloud compute instances list --filter='networkInterfaces.accessConfigs:*' --format='table(name,zone,networkInterfaces[0].accessConfigs[0].natIP)'", "description": "GCP VMs with external IPs"},
+            {"provider": "azure", "command": "az vm list-ip-addresses --query '[].{VM:virtualMachine.name,PublicIP:virtualMachine.network.publicIpAddresses[0].ipAddress}'", "description": "Azure VMs with public IPs"},
+            {"provider": "shodan", "api": "/shodan/host/{ip}", "description": "External view of exposed services"}
+          ]
+        },
+        {
+          "type": "report",
+          "description": "Network segmentation compliance",
+          "tip": "Verify network segmentation between security zones (DMZ, app tier, data tier). Document trust boundaries and justify any cross-zone traffic.",
+          "sources": [
+            {"provider": "aws", "command": "aws ec2 describe-vpcs --query 'Vpcs[*].{ID:VpcId,CIDR:CidrBlock,Tags:Tags}'", "description": "VPC inventory with CIDR blocks"},
+            {"provider": "aws", "command": "aws ec2 describe-subnets --query 'Subnets[*].{SubnetId:SubnetId,VpcId:VpcId,CIDR:CidrBlock,AZ:AvailabilityZone}'", "description": "Subnet segmentation"},
+            {"provider": "gcp", "command": "gcloud compute networks subnets list --format='table(name,region,ipCidrRange,network)'", "description": "GCP subnet inventory"},
+            {"provider": "manual", "artifact": "Network architecture diagram showing security zones and trust boundaries"}
           ]
         }
       ]
@@ -410,18 +469,39 @@
         {
           "type": "configuration",
           "description": "MFA enforcement policy",
+          "tip": "Verify policy REQUIRES phishing-resistant MFA (FIDO2, WebAuthn, passkeys, PIV/CAC). SMS, TOTP, and push notifications do NOT qualify as phishing-resistant under FedRAMP 20x.",
           "sources": [
-            {"provider": "okta", "api": "/api/v1/policies?type=MFA_ENROLL", "description": "Okta MFA policy"},
-            {"provider": "azure", "api": "/v1.0/policies/authenticationStrengthPolicies", "description": "Entra ID authentication strength"},
-            {"provider": "aws", "command": "aws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'", "description": "AWS account MFA status"}
+            {"provider": "okta", "api": "/api/v1/policies?type=MFA_ENROLL", "description": "Okta MFA policy - check for WebAuthn/FIDO2 requirement"},
+            {"provider": "azure", "api": "/v1.0/policies/authenticationStrengthPolicies", "description": "Entra ID authentication strength - look for 'phishingResistant' strength"},
+            {"provider": "azure", "api": "/v1.0/policies/conditionalAccessPolicies", "description": "Conditional Access policies with authentication strength requirements"},
+            {"provider": "aws", "command": "aws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'", "description": "AWS account MFA status"},
+            {"provider": "aws", "command": "aws iam list-virtual-mfa-devices", "description": "List MFA devices (check for hardware keys vs virtual)"},
+            {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=<group>", "description": "GCP Cloud Identity group membership with 2SV status"},
+            {"provider": "gcp", "api": "admin.googleapis.com/admin/directory/v1/users", "description": "Google Workspace Admin SDK - user 2SV enrollment"},
+            {"provider": "duo", "api": "/admin/v1/users", "description": "Duo Admin API - user enrollment and auth methods"}
           ]
         },
         {
           "type": "report",
           "description": "MFA enrollment status",
+          "tip": "100% of users must have phishing-resistant MFA enrolled. Generate reports showing enrollment coverage and the specific MFA type per user.",
           "sources": [
-            {"provider": "aws", "command": "aws iam generate-credential-report && aws iam get-credential-report", "description": "IAM credential report with MFA status"},
-            {"provider": "okta", "api": "/api/v1/users?filter=status eq \"ACTIVE\"", "description": "User MFA enrollment status"}
+            {"provider": "aws", "command": "aws iam generate-credential-report && aws iam get-credential-report --output text --query 'Content' | base64 -d", "description": "IAM credential report - check mfa_active and hardware_mfa columns"},
+            {"provider": "okta", "api": "/api/v1/users?filter=status eq \"ACTIVE\"", "description": "User MFA enrollment - check embedded factors for WebAuthn"},
+            {"provider": "azure", "command": "az ad user list --query '[].{UPN:userPrincipalName,authMethods:authenticationMethods}'", "description": "Entra ID user authentication methods"},
+            {"provider": "gcp", "command": "gcloud identity users describe <user> --format='value(twoStepVerification)'", "description": "GCP user 2-step verification status"},
+            {"provider": "crowdstrike", "api": "/identity-protection/entities/users/v1", "description": "CrowdStrike Identity - MFA status across IdPs"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "MFA authentication events",
+          "tip": "Monitor for successful authentications that bypass MFA or use non-compliant methods. Alert on any fallback to SMS/TOTP.",
+          "sources": [
+            {"provider": "okta", "api": "/api/v1/logs?filter=eventType eq \"user.authentication.auth_via_mfa\"", "description": "Okta MFA authentication logs"},
+            {"provider": "azure", "api": "/v1.0/auditLogs/signIns", "description": "Entra ID sign-in logs - filter by authenticationMethodsUsed"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=ConsoleLogin", "description": "CloudTrail console login events with MFA info"},
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName=\"google.login.LoginService.loginSuccess\"' --format=json", "description": "GCP login audit logs"}
           ]
         }
       ]
@@ -557,10 +637,39 @@
         {
           "type": "configuration",
           "description": "SIEM configuration and coverage",
+          "tip": "SIEM must be centralized and tamper-resistant. Verify all log sources are connected and retention meets FedRAMP requirements (typically 1 year online, 3 years archived for moderate).",
           "sources": [
-            {"provider": "splunk", "api": "/services/data/inputs", "description": "Splunk data inputs"},
+            {"provider": "splunk", "api": "/services/data/inputs", "description": "Splunk data inputs - verify all critical sources"},
+            {"provider": "splunk", "api": "/services/saved/searches", "description": "Splunk correlation rules and alerts"},
             {"provider": "azure", "command": "az sentinel data-connector list --workspace-name <ws> --resource-group <rg>", "description": "Sentinel data connectors"},
-            {"provider": "elastic", "api": "/_cat/indices?v", "description": "Elasticsearch log indices"}
+            {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <ws> --query 'retentionInDays'", "description": "Log Analytics retention setting"},
+            {"provider": "elastic", "api": "/_cat/indices?v", "description": "Elasticsearch log indices"},
+            {"provider": "gcp", "command": "gcloud logging sinks list --format='table(name,destination,filter)'", "description": "GCP Cloud Logging sinks"},
+            {"provider": "gcp", "command": "gcloud logging buckets describe _Default --location=global --format='value(retentionDays)'", "description": "GCP log bucket retention"},
+            {"provider": "aws", "command": "aws logs describe-log-groups --query 'logGroups[*].{Name:logGroupName,Retention:retentionInDays}'", "description": "CloudWatch Logs retention settings"},
+            {"provider": "chronicle", "api": "/v1/detect/rules", "description": "Google Chronicle detection rules"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Log source coverage",
+          "tip": "Document all systems in scope and verify each has log forwarding enabled. Missing sources = compliance gaps.",
+          "sources": [
+            {"provider": "splunk", "api": "/services/data/indexes", "description": "Splunk index inventory with sourcetypes"},
+            {"provider": "aws", "command": "aws cloudtrail describe-trails --query 'trailList[*].{Name:Name,S3Bucket:S3BucketName,IsMultiRegion:IsMultiRegionTrail}'", "description": "CloudTrail configuration"},
+            {"provider": "gcp", "command": "gcloud logging logs list --format='table(name)'", "description": "GCP log types being captured"},
+            {"provider": "azure", "command": "az monitor diagnostic-settings list --resource <resource-id>", "description": "Azure diagnostic settings per resource"},
+            {"provider": "manual", "artifact": "Log source matrix mapping systems to SIEM data sources"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "SIEM operational health",
+          "tip": "Monitor SIEM itself for gaps in ingestion. Alert on missing data or ingestion delays.",
+          "sources": [
+            {"provider": "splunk", "api": "/services/server/introspection/indexer", "description": "Splunk indexer health metrics"},
+            {"provider": "datadog", "api": "/api/v1/logs/analytics/aggregate", "description": "Datadog log analytics"},
+            {"provider": "sumo", "api": "/api/v1/collectors", "description": "Sumo Logic collector status"}
           ]
         }
       ]
@@ -898,12 +1007,49 @@
       "name": "Secret Management",
       "evidence": [
         {
-          "type": "log",
-          "description": "Secret rotation and access logs",
+          "type": "configuration",
+          "description": "Secret management policy and rotation settings",
+          "tip": "Verify automatic rotation is enabled. For high-impact systems, secrets should rotate at least every 90 days. Service account keys should rotate more frequently (30-60 days).",
           "sources": [
+            {"provider": "gcp", "command": "gcloud secrets list --format='table(name,replication.automatic,rotation.nextRotationTime,rotation.rotationPeriod)'", "description": "GCP Secret Manager with rotation config"},
+            {"provider": "gcp", "command": "gcloud secrets describe <secret> --format='value(rotation)'", "description": "GCP secret rotation policy details"},
+            {"provider": "aws", "command": "aws secretsmanager describe-secret --secret-id <id> --query '{Name:Name,RotationEnabled:RotationEnabled,RotationRules:RotationRules}'", "description": "AWS Secrets Manager rotation config"},
+            {"provider": "azure", "command": "az keyvault secret show --vault-name <vault> --name <secret> --query '{expires:attributes.expires,enabled:attributes.enabled}'", "description": "Key Vault secret attributes"},
+            {"provider": "hashicorp", "api": "/v1/sys/mounts/<mount>/tune", "description": "Vault mount configuration and TTL settings"},
+            {"provider": "cyberark", "api": "/PasswordVault/api/Safes/<safe>/Members", "description": "CyberArk safe membership and permissions"}
+          ]
+        },
+        {
+          "type": "log",
+          "description": "Secret access and rotation audit logs",
+          "tip": "Monitor for unauthorized access attempts, failed retrievals, and verify rotation events occur on schedule. Alert on any manual secret access by humans (should be rare).",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"secretmanager.googleapis.com/Secret\" AND protoPayload.methodName:(\"AccessSecretVersion\" OR \"AddSecretVersion\")' --format=json", "description": "GCP Secret Manager access logs"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventSource,AttributeValue=secretsmanager.amazonaws.com --query 'Events[].{Time:EventTime,Event:CloudTrailEvent}'", "description": "AWS Secrets Manager CloudTrail events"},
             {"provider": "hashicorp", "api": "/v1/sys/audit", "description": "Vault audit logs"},
-            {"provider": "aws", "command": "aws secretsmanager list-secrets --query 'SecretList[].{Name:Name,LastRotatedDate:LastRotatedDate}'", "description": "Secrets Manager rotation status"},
-            {"provider": "azure", "command": "az keyvault secret list --vault-name <vault>", "description": "Key Vault secrets"}
+            {"provider": "azure", "command": "az monitor activity-log list --resource-group <rg> --resource-type Microsoft.KeyVault/vaults --query '[].{time:eventTimestamp,operation:operationName.localizedValue,status:status.localizedValue}'", "description": "Key Vault activity logs"}
+          ]
+        },
+        {
+          "type": "inventory",
+          "description": "Secret inventory and ownership",
+          "tip": "Maintain a complete inventory of all secrets with clear ownership. Identify any secrets that haven't rotated recently or have no defined owner - these are compliance risks.",
+          "sources": [
+            {"provider": "gcp", "command": "gcloud secrets list --format='table(name,createTime,labels)'", "description": "GCP Secret Manager inventory with labels"},
+            {"provider": "aws", "command": "aws secretsmanager list-secrets --query 'SecretList[].{Name:Name,LastRotatedDate:LastRotatedDate,Tags:Tags}'", "description": "AWS Secrets Manager inventory"},
+            {"provider": "azure", "command": "az keyvault secret list --vault-name <vault> --query '[].{name:name,created:attributes.created,updated:attributes.updated}'", "description": "Key Vault secret inventory"},
+            {"provider": "hashicorp", "api": "/v1/secret/metadata?list=true", "description": "Vault secrets list with metadata"}
+          ]
+        },
+        {
+          "type": "scan",
+          "description": "Secret exposure detection",
+          "tip": "Continuously scan for exposed secrets in code, logs, and configuration. Any detected exposure requires immediate rotation and incident response.",
+          "sources": [
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=category=\"SECRETS_IN_SOURCE_CODE\"", "description": "GCP Security Command Center secret findings"},
+            {"provider": "github", "api": "/repos/{owner}/{repo}/secret-scanning/alerts", "description": "GitHub secret scanning alerts"},
+            {"provider": "gitleaks", "command": "gitleaks detect --source <repo> --report-format json", "description": "Gitleaks secret detection"},
+            {"provider": "trufflehog", "command": "trufflehog git file://<repo> --json", "description": "TruffleHog secret scanning"}
           ]
         }
       ]
