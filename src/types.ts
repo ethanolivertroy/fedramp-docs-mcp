@@ -156,9 +156,15 @@ export interface EvidenceItem {
   sources: EvidenceSource[];
 }
 
+export interface KsiRetiredInfo {
+  version: string;
+  note?: string;
+}
+
 export interface KsiEvidenceExample {
   name: string;
   evidence: EvidenceItem[];
+  retired?: KsiRetiredInfo;
 }
 
 export interface EvidenceExamplesData {

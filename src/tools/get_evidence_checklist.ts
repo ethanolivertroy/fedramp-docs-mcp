@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { z } from "zod";
 
 import { getKsiItems } from "../indexer.js";
-import type { EvidenceExamplesData, EvidenceItem, KsiItem } from "../types.js";
+import type { EvidenceExamplesData, EvidenceItem, KsiItem, KsiRetiredInfo } from "../types.js";
 import type { ToolDefinition } from "./base.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,6 +16,7 @@ interface EvidenceChecklistItem {
   theme: string;
   impact?: { low?: boolean; moderate?: boolean; high?: boolean };
   evidence: EvidenceItem[];
+  retired?: KsiRetiredInfo;
 }
 
 interface EvidenceChecklistResult {
@@ -44,6 +45,11 @@ const schema = z.object({
     .optional()
     .describe("Filter by KSI theme (e.g., IAM, CNA, AFR)"),
   id: z.string().optional().describe("Get evidence for a specific KSI item ID"),
+  includeRetired: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Include retired KSIs in results (default: true for backwards compatibility)"),
 });
 
 export const getEvidenceChecklistTool: ToolDefinition<
@@ -77,7 +83,7 @@ export const getEvidenceChecklistTool: ToolDefinition<
     }
 
     // Build checklist items with evidence examples
-    const items: EvidenceChecklistItem[] = filtered.map((ksi) => {
+    let items: EvidenceChecklistItem[] = filtered.map((ksi) => {
       // Get evidence examples for this KSI from our data file
       const evidenceExample = evidenceData?.examples[ksi.id];
 
@@ -88,8 +94,14 @@ export const getEvidenceChecklistTool: ToolDefinition<
         theme: ksi.category ?? ksi.theme ?? "",
         impact: ksi.impact,
         evidence: evidenceExample?.evidence ?? [],
+        retired: evidenceExample?.retired,
       };
     });
+
+    // Filter out retired KSIs if requested
+    if (input.includeRetired === false) {
+      items = items.filter((item) => !item.retired);
+    }
 
     // Get unique themes
     const themes = [...new Set(items.map((item) => item.theme).filter(Boolean))].sort();

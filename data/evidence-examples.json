@@ -559,6 +559,10 @@
     },
     "KSI-CMT-05": {
       "name": "Emergency Changes",
+      "retired": {
+        "version": "25.12A",
+        "note": "Retired in FedRAMP 25.12A release. Emergency change procedures remain important but are now covered under other change management KSIs."
+      },
       "evidence": [
         {
           "type": "documentation",
@@ -1208,6 +1212,10 @@
     },
     "KSI-MLA-03": {
       "name": "Log Integrity",
+      "retired": {
+        "version": "25.12A",
+        "note": "Retired in FedRAMP 25.12A release. Log integrity requirements consolidated into KSI-MLA-01 and KSI-MLA-02."
+      },
       "evidence": [
         {
           "type": "configuration",
@@ -1235,6 +1243,10 @@
     },
     "KSI-MLA-04": {
       "name": "Log Retention",
+      "retired": {
+        "version": "25.12A",
+        "note": "Retired in FedRAMP 25.12A release. Log retention requirements consolidated into KSI-MLA-01 and KSI-MLA-02."
+      },
       "evidence": [
         {
           "type": "configuration",
@@ -1303,6 +1315,10 @@
     },
     "KSI-MLA-06": {
       "name": "Alerting",
+      "retired": {
+        "version": "25.12A",
+        "note": "Retired in FedRAMP 25.12A release. Alerting requirements consolidated into other MLA KSIs."
+      },
       "evidence": [
         {
           "type": "configuration",
