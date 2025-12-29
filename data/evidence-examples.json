@@ -41,6 +41,9 @@
           "tip": "All 72 KSIs must be addressed. Document implementation status, evidence sources, and any gaps. Review KSI status monthly and report quarterly.",
           "sources": [
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=category:*", "description": "GCP SCC findings mapped to KSIs"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"GeneratorId\":[{\"Value\":\"security-control\",\"Comparison\":\"PREFIX\"}]}'", "description": "AWS Security Hub control findings"},
+            {"provider": "azure", "command": "az security secure-score-controls list --query '[].{name:displayName,score:current,max:max}'", "description": "Azure Secure Score controls"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/secureScores", "description": "Azure Security Center scores API"},
             {"provider": "manual", "artifact": "KSI compliance matrix with status for each indicator"},
             {"provider": "api", "description": "This MCP server's analyze_control_coverage output"},
             {"provider": "manual", "artifact": "KSI gap analysis and remediation plan"}
@@ -51,6 +54,9 @@
           "description": "KSI compliance metrics",
           "tip": "Track percentage of KSIs fully implemented vs partial vs not started. Show improvement trend over time.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"ACTIVE\"' --format='value(finding.category)' | sort | uniq -c", "description": "GCP findings by category (KSI mapping)"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"PASSED\",\"Comparison\":\"EQUALS\"}]}' --query 'length(Findings)'", "description": "AWS passing controls count"},
+            {"provider": "azure", "command": "az security assessment list --query 'length([?status.code==`Healthy`])'", "description": "Azure healthy assessments count"},
             {"provider": "manual", "artifact": "KSI dashboard with implementation percentages"},
             {"provider": "api", "description": "This MCP server's get_theme_summary for each theme"}
           ]
@@ -67,8 +73,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --scope=organizations/<org> --query='policy.bindings.members:*' --format=json | jq '.[] | select(.policy.bindings[].members[] | contains(\"@\"))'", "description": "GCP cross-org IAM bindings"},
             {"provider": "gcp", "command": "gcloud compute shared-vpc list-associated-resources <host-project>", "description": "GCP Shared VPC associations"},
-            {"provider": "manual", "artifact": "Authorization Data Sharing (ADS) agreements"},
-            {"provider": "aws", "command": "aws ram list-resources --resource-owner SELF", "description": "AWS Resource Access Manager shares"}
+            {"provider": "aws", "command": "aws ram list-resources --resource-owner SELF", "description": "AWS Resource Access Manager shares"},
+            {"provider": "azure", "command": "az role assignment list --query '[?principalType==`ServicePrincipal`].{principal:principalName,role:roleDefinitionName,scope:scope}'", "description": "Azure cross-tenant service principals"},
+            {"provider": "azure", "command": "az network private-endpoint-connection list --name <resource> --resource-group <rg> --type <type>", "description": "Azure Private Endpoint connections"},
+            {"provider": "manual", "artifact": "Authorization Data Sharing (ADS) agreements"}
           ]
         },
         {
@@ -76,6 +84,7 @@
           "description": "Interconnection agreements",
           "tip": "Each interconnection needs an ISA or MOU documenting security responsibilities, data types, and incident response procedures.",
           "sources": [
+            {"provider": "azure", "command": "az network vnet-peering list --resource-group <rg> --vnet-name <vnet>", "description": "Azure VNet peering (cross-network connections)"},
             {"provider": "manual", "artifact": "Interconnection Security Agreements (ISAs)"},
             {"provider": "manual", "artifact": "Memoranda of Understanding (MOUs) for data sharing"}
           ]
@@ -147,6 +156,8 @@
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"CreateDeployment\" OR \"UpdateDeployment\")' --format=json", "description": "GCP Deployment Manager changes"},
             {"provider": "gcp", "command": "gcloud builds list --filter='status=SUCCESS' --format='table(id,createTime,source.repoSource.repoName)'", "description": "GCP Cloud Build deployments"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateChangeSet", "description": "CloudFormation changes"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?operationName.value contains `deployments/write`].{time:eventTimestamp,resource:resourceId,status:status.value}'", "description": "Azure ARM deployment changes"},
+            {"provider": "azure", "command": "az deployment group list --resource-group <rg> --query '[].{name:name,time:timestamp,state:properties.provisioningState}'", "description": "Azure deployment history"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/releases", "description": "Release notifications"},
             {"provider": "manual", "artifact": "Significant Change Request (SCR) log"}
           ]
@@ -156,6 +167,7 @@
           "description": "SCR tracking",
           "tip": "Maintain log of all Significant Change Requests with impact analysis, approval, and notification status. Include evidence of FedRAMP notification.",
           "sources": [
+            {"provider": "azure", "command": "az tag list --resource-id <resource> --query 'properties.tags'", "description": "Azure resource tags (change tracking)"},
             {"provider": "manual", "artifact": "SCR register with dates and approvals"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=significant-change", "description": "JIRA SCR tickets"}
           ]
@@ -172,8 +184,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"ACTIVE\"' --format='table(finding.category,finding.severity,finding.createTime)'", "description": "GCP SCC active findings for ConMon"},
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings:group", "description": "GCP SCC findings grouped by category"},
-            {"provider": "manual", "artifact": "Monthly/Quarterly ConMon reports"},
-            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "Security Hub compliance findings"}
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "Security Hub compliance findings"},
+            {"provider": "azure", "command": "az security assessment list --query '[?status.code==`Unhealthy`].{name:displayName,severity:metadata.severity}'", "description": "Azure Defender unhealthy assessments"},
+            {"provider": "azure", "command": "az security task list --query '[].{name:name,state:state,severity:securityTaskParameters.severity}'", "description": "Azure security tasks (ConMon action items)"},
+            {"provider": "manual", "artifact": "Monthly/Quarterly ConMon reports"}
           ]
         },
         {
@@ -181,6 +195,7 @@
           "description": "ConMon metrics dashboard",
           "tip": "Track POA&M aging, vulnerability trends, and control assessment status. Report on percentage of controls validated and any deferred assessments.",
           "sources": [
+            {"provider": "azure", "command": "az security secure-score list --query '[].{name:displayName,current:current,max:max,percentage:percentage}'", "description": "Azure Secure Score trends"},
             {"provider": "manual", "artifact": "ConMon dashboard with KPIs"},
             {"provider": "manual", "artifact": "POA&M aging report"}
           ]
@@ -198,6 +213,8 @@
             {"provider": "gcp", "command": "gcloud compute project-info describe --format='value(commonInstanceMetadata.items)'", "description": "GCP project-level secure defaults"},
             {"provider": "gcp", "command": "gcloud resource-manager org-policies list --organization=<org>", "description": "GCP Organization policies (security guardrails)"},
             {"provider": "aws", "command": "aws ssm list-documents --filters Key=DocumentType,Values=Package", "description": "SSM configuration documents"},
+            {"provider": "azure", "command": "az policy definition list --query '[?policyType==`BuiltIn`].{name:displayName,category:metadata.category}'", "description": "Azure built-in security policies"},
+            {"provider": "azure", "command": "az policy assignment list --query '[].{name:displayName,policy:policyDefinitionId}'", "description": "Azure policy assignments (secure defaults)"},
             {"provider": "cis", "artifact": "CIS Benchmark compliance reports"},
             {"provider": "manual", "artifact": "Secure Configuration Guide for customers"}
           ]
@@ -207,6 +224,7 @@
           "description": "Customer security guidance",
           "tip": "Provide customers with clear security configuration guidance. Include shared responsibility matrix and recommended security settings.",
           "sources": [
+            {"provider": "azure", "command": "az blueprint list --query '[].{name:name,status:status}'", "description": "Azure Blueprints (security templates)"},
             {"provider": "manual", "artifact": "Customer Security Configuration Guide"},
             {"provider": "manual", "artifact": "Shared Responsibility Matrix"}
           ]
@@ -222,6 +240,8 @@
           "tip": "Dedicated security@company.com or fedramp-security@company.com inbox must be monitored 24/7. Response SLA: acknowledge within 24 hours, initial response within 48 hours.",
           "sources": [
             {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='displayName:security-inbox'", "description": "GCP alerting for security inbox monitoring"},
+            {"provider": "aws", "command": "aws ses get-identity-verification-attributes --identities security@company.com", "description": "AWS SES verified security inbox"},
+            {"provider": "azure", "command": "az monitor action-group list --query '[?contains(name,`security`)].{name:name,email:emailReceivers}'", "description": "Azure action groups for security alerting"},
             {"provider": "manual", "artifact": "Security inbox procedures and monitoring evidence"},
             {"provider": "email", "description": "Security inbox activity logs (fedramp-security@company.com)"},
             {"provider": "pagerduty", "api": "/services", "description": "PagerDuty escalation for security inbox"}
@@ -232,6 +252,7 @@
           "description": "Security inbox response tracking",
           "tip": "Log all security inbox communications with timestamps, responders, and resolution. Track response time metrics.",
           "sources": [
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?contains(caller,`security`)].{time:eventTimestamp,caller:caller,operation:operationName.localizedValue}'", "description": "Azure security inbox activity"},
             {"provider": "zendesk", "api": "/api/v2/tickets.json?query=type:ticket", "description": "Security ticket tracking"},
             {"provider": "manual", "artifact": "Security inbox response log"}
           ]
@@ -273,6 +294,8 @@
           "tip": "FedRAMP requires incident notification within 1 hour of detection for significant incidents. Document escalation paths to FedRAMP PMO and US-CERT.",
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'severity>=ERROR AND resource.type=\"project\"' --limit=10 --format=json", "description": "GCP security event logs"},
+            {"provider": "aws", "command": "aws events list-rules --query 'Rules[?contains(Name,`incident`)].{name:Name,state:State}'", "description": "AWS EventBridge incident rules"},
+            {"provider": "azure", "command": "az monitor activity-log alert list --query '[?contains(name,`incident`)].{name:name,enabled:enabled}'", "description": "Azure incident alert rules"},
             {"provider": "manual", "artifact": "Incident Response Plan with FedRAMP ICP integration"},
             {"provider": "pagerduty", "api": "/incidents", "description": "Incident notification records"},
             {"provider": "manual", "artifact": "FedRAMP incident notification templates"}
@@ -283,6 +306,7 @@
           "description": "Incident communication records",
           "tip": "Log all incident communications with timestamps. Include evidence of FedRAMP and US-CERT notifications for reportable incidents.",
           "sources": [
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?level==`Critical` || level==`Error`].{time:eventTimestamp,level:level,description:description}'", "description": "Azure critical/error events"},
             {"provider": "manual", "artifact": "Incident communication log with FedRAMP notifications"},
             {"provider": "opsgenie", "api": "/v2/incidents", "description": "OpsGenie incident records"}
           ]
@@ -300,6 +324,8 @@
             {"provider": "gcp", "command": "gcloud kms keys list --location=<location> --keyring=<keyring> --format='table(name,purpose,algorithm)'", "description": "GCP Cloud KMS keys (FIPS 140-2 Level 3)"},
             {"provider": "gcp", "command": "gcloud kms keys describe <key> --keyring=<ring> --location=<loc> --format='value(primary.protectionLevel)'", "description": "GCP KMS protection level (HSM = FIPS)"},
             {"provider": "aws", "command": "aws kms describe-key --key-id <key-id> --query 'KeyMetadata.KeySpec'", "description": "KMS key configuration"},
+            {"provider": "azure", "command": "az keyvault key list --vault-name <vault> --query '[].{name:kid,type:kty}'", "description": "Azure Key Vault keys"},
+            {"provider": "azure", "command": "az keyvault show --name <vault> --query 'properties.sku.name'", "description": "Azure Key Vault SKU (premium = HSM)"},
             {"provider": "manual", "artifact": "FIPS 140-2/3 validated module certificates"},
             {"provider": "openssl", "command": "openssl version -a", "description": "OpenSSL FIPS status"}
           ]
@@ -309,6 +335,7 @@
           "description": "Cryptographic module inventory",
           "tip": "Document all FIPS modules in use: cloud KMS, HSMs, TLS libraries, encryption software. Include NIST CAVP certificate numbers.",
           "sources": [
+            {"provider": "azure", "command": "az keyvault list --query '[].{name:name,sku:properties.sku.name}'", "description": "Azure Key Vaults inventory"},
             {"provider": "manual", "artifact": "FIPS module inventory with certificate numbers"},
             {"provider": "nist", "artifact": "NIST CAVP certificate verification"}
           ]
@@ -324,6 +351,8 @@
           "tip": "All personnel must complete security awareness training within 30 days of onboarding and annually thereafter. Track completion rates - target is 100%.",
           "sources": [
             {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=security-trained@<domain>", "description": "GCP Cloud Identity group for trained users"},
+            {"provider": "aws", "command": "aws iam list-users --query 'Users[].{user:UserName,created:CreateDate}'", "description": "AWS IAM users (cross-reference with training records)"},
+            {"provider": "azure", "command": "az ad user list --query '[].{name:displayName,created:createdDateTime}'", "description": "Azure AD users for training tracking"},
             {"provider": "knowbe4", "api": "/v1/training/enrollments", "description": "KnowBe4 training status"},
             {"provider": "workday", "api": "/learning/v1/completions", "description": "Workday Learning completions"},
             {"provider": "manual", "artifact": "LMS training completion report"}
@@ -334,6 +363,7 @@
           "description": "Training compliance metrics",
           "tip": "Report on completion rates, overdue training, and phishing simulation results. Track improvement in phishing click rates over time.",
           "sources": [
+            {"provider": "azure", "command": "az ad user list --query 'length([?accountEnabled==`true`])'", "description": "Azure AD active user count (training denominator)"},
             {"provider": "knowbe4", "api": "/v1/phishing/security_tests", "description": "KnowBe4 phishing test results"},
             {"provider": "manual", "artifact": "Training compliance dashboard"}
           ]
@@ -349,6 +379,8 @@
           "tip": "Privileged users (admins, developers, security) need additional role-specific training. Document training requirements by role and track completion.",
           "sources": [
             {"provider": "gcp", "command": "gcloud asset search-all-iam-policies --query='policy.bindings.role:roles/owner OR policy.bindings.role:roles/editor' --format=json", "description": "GCP privileged users for training tracking"},
+            {"provider": "aws", "command": "aws iam list-attached-user-policies --user-name <user> --query 'AttachedPolicies[?contains(PolicyName,`Admin`)].PolicyName'", "description": "AWS users with admin policies"},
+            {"provider": "azure", "command": "az role assignment list --query '[?contains(roleDefinitionName,`Owner`) || contains(roleDefinitionName,`Contributor`)].{user:principalName,role:roleDefinitionName}'", "description": "Azure privileged role assignments"},
             {"provider": "manual", "artifact": "Privileged user training matrix"},
             {"provider": "lms", "description": "Role-specific course completion records"},
             {"provider": "manual", "artifact": "Role-based training requirements document"}
@@ -365,6 +397,8 @@
           "tip": "Developers must complete secure coding training (OWASP Top 10, secure SDLC) annually. Track training tied to code commit access.",
           "sources": [
             {"provider": "gcp", "command": "gcloud source repos list --format='table(name)'", "description": "GCP Cloud Source Repos (developers who need training)"},
+            {"provider": "aws", "command": "aws codecommit list-repositories --query 'repositories[].repositoryName'", "description": "AWS CodeCommit repos (developers who need training)"},
+            {"provider": "azure", "command": "az repos list --query '[].{name:name,project:project.name}'", "description": "Azure DevOps repos (developers who need training)"},
             {"provider": "manual", "artifact": "OWASP/secure coding training records"},
             {"provider": "github", "api": "/orgs/{org}/dependabot/alerts", "description": "Developer security alert acknowledgments"},
             {"provider": "snyk", "api": "/org/{orgId}/audit", "description": "Snyk developer activity (training triggers)"}
@@ -375,6 +409,7 @@
           "description": "Training-gated access",
           "tip": "Consider requiring completed security training before granting commit access to production repositories.",
           "sources": [
+            {"provider": "azure", "command": "az devops security permission list --namespace-id <git-namespace>", "description": "Azure DevOps repo permissions"},
             {"provider": "github", "api": "/orgs/{org}/teams", "description": "GitHub team membership (training-gated)"},
             {"provider": "manual", "artifact": "Access control policy requiring training completion"}
           ]
@@ -390,6 +425,8 @@
           "tip": "IR/DR team members must participate in tabletop exercises at least annually. Document drill scenarios, participants, lessons learned, and action items.",
           "sources": [
             {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='userLabels.drill:true'", "description": "GCP alert policies used in DR drills"},
+            {"provider": "aws", "command": "aws fis list-experiments --query 'experiments[].{id:id,state:state.status}'", "description": "AWS Fault Injection Simulator experiments (chaos engineering)"},
+            {"provider": "azure", "command": "az monitor action-group list --query '[?contains(name,`incident`)].{name:name,email:emailReceivers}'", "description": "Azure incident action groups"},
             {"provider": "manual", "artifact": "Tabletop exercise attendance records"},
             {"provider": "manual", "artifact": "DR drill participation logs"},
             {"provider": "pagerduty", "api": "/oncalls", "description": "PagerDuty on-call roster (IR team)"}
@@ -400,6 +437,7 @@
           "description": "Drill lessons learned",
           "tip": "Document lessons learned from each drill. Track remediation of identified gaps. Use findings to improve IR/DR procedures.",
           "sources": [
+            {"provider": "azure", "command": "az backup job list --query '[?operation==`Restore`].{name:name,status:status,time:startTime}'", "description": "Azure backup restore jobs (DR tests)"},
             {"provider": "manual", "artifact": "Tabletop exercise after-action reports"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=drill-action-item", "description": "JIRA drill action items"}
           ]
@@ -442,8 +480,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud run revisions list --format='table(name,status,createTime)'", "description": "GCP Cloud Run revisions (immutable deployments)"},
             {"provider": "gcp", "command": "gcloud container clusters get-credentials <cluster> && kubectl rollout history deployment/<name>", "description": "GKE deployment rollout history"},
-            {"provider": "argocd", "api": "/api/v1/applications", "description": "ArgoCD deployment history"},
             {"provider": "aws", "command": "aws ecs describe-services --cluster <cluster> --services <service>", "description": "ECS deployment configuration"},
+            {"provider": "azure", "command": "az webapp deployment list --resource-group <rg> --name <app> --query '[].{id:id,status:status,time:received_time}'", "description": "Azure App Service deployment slots"},
+            {"provider": "azure", "command": "az aks show --resource-group <rg> --name <cluster> --query 'agentPoolProfiles[].{name:name,count:count}'", "description": "Azure AKS cluster (container deployments)"},
+            {"provider": "argocd", "api": "/api/v1/applications", "description": "ArgoCD deployment history"},
             {"provider": "terraform", "command": "terraform state list", "description": "Terraform managed resources"}
           ]
         },
@@ -453,6 +493,7 @@
           "tip": "Track deployment frequency, success rate, and rollback frequency. Failed deployments should auto-rollback. Mean time to recovery (MTTR) should be minutes.",
           "sources": [
             {"provider": "gcp", "command": "gcloud deploy releases list --delivery-pipeline=<pipeline> --format='table(name,renderState,createTime)'", "description": "GCP Cloud Deploy release history"},
+            {"provider": "azure", "command": "az pipelines runs list --query '[].{id:id,result:result,finishTime:finishTime}'", "description": "Azure Pipelines deployment runs"},
             {"provider": "datadog", "api": "/api/v1/events", "description": "Datadog deployment events"}
           ]
         }
@@ -468,6 +509,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud builds list --format='table(id,status,createTime,source.repoSource.repoName)'", "description": "GCP Cloud Build pipeline runs"},
             {"provider": "gcp", "command": "gcloud builds describe <build-id> --format='value(results.images,results.buildStepImages)'", "description": "GCP Cloud Build results"},
+            {"provider": "aws", "command": "aws codepipeline list-pipeline-executions --pipeline-name <pipeline>", "description": "AWS CodePipeline execution history"},
+            {"provider": "azure", "command": "az pipelines runs list --query '[].{id:id,result:result,sourceBranch:sourceBranch}'", "description": "Azure Pipelines runs"},
+            {"provider": "azure", "command": "az pipelines build list --query '[].{id:id,result:result,buildNumber:buildNumber}'", "description": "Azure DevOps build history"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/actions/runs", "description": "GitHub Actions workflow runs"},
             {"provider": "gitlab", "api": "/projects/{id}/pipelines", "description": "GitLab CI pipeline history"},
             {"provider": "jenkins", "api": "/job/{name}/api/json", "description": "Jenkins build history"}
@@ -478,6 +522,7 @@
           "description": "Pipeline security gates",
           "tip": "Require security scan pass, code review approval, and test coverage thresholds before merge. Document bypass procedures for emergencies.",
           "sources": [
+            {"provider": "azure", "command": "az repos policy list --query '[].{type:type.displayName,enabled:isEnabled}'", "description": "Azure DevOps branch policies"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/branches/{branch}/protection", "description": "GitHub branch protection rules"},
             {"provider": "gcp", "command": "gcloud deploy delivery-pipelines describe <pipeline> --format='value(serialPipeline.stages)'", "description": "GCP Cloud Deploy pipeline stages"}
           ]
@@ -493,6 +538,8 @@
           "tip": "All changes require a change request with impact analysis, approval, and testing plan. CAB reviews high-risk changes. Document change window and rollback plan.",
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.request.@type:\"type.googleapis.com/google.iam.admin.v1.CreateRoleRequest\"' --format=json", "description": "GCP role change requests"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateChangeSet", "description": "AWS CloudFormation change sets"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?operationName.value contains `write`].{time:eventTimestamp,resource:resourceId,caller:caller}'", "description": "Azure resource changes"},
             {"provider": "servicenow", "api": "/api/now/table/change_request", "description": "ServiceNow change requests"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=type=Change", "description": "Jira change tickets"},
             {"provider": "manual", "artifact": "Change Advisory Board (CAB) meeting minutes"}
@@ -503,6 +550,7 @@
           "description": "Change success metrics",
           "tip": "Track change success rate, failed changes, and unplanned changes. High failure rate indicates process issues. Target >95% success rate.",
           "sources": [
+            {"provider": "azure", "command": "az pipelines runs list --query 'length([?result==`succeeded`])' ", "description": "Azure successful deployment count"},
             {"provider": "servicenow", "api": "/api/now/stats/change_request", "description": "ServiceNow change metrics"},
             {"provider": "manual", "artifact": "Change management dashboard"}
           ]
@@ -518,6 +566,8 @@
           "tip": "Emergency changes bypass normal approval but require post-implementation review within 24-48 hours. Document justification, authorization, and retrospective.",
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.authorizationInfo.granted=true AND severity>=WARNING' --format=json", "description": "GCP emergency access grants"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=break-glass", "description": "AWS break-glass access events"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?authorization.action contains `elevate`].{time:eventTimestamp,caller:caller}'", "description": "Azure PIM elevation events"},
             {"provider": "servicenow", "api": "/api/now/table/change_request?sysparm_query=type=emergency", "description": "Emergency change records"},
             {"provider": "manual", "artifact": "Emergency change authorization logs"},
             {"provider": "pagerduty", "api": "/incidents?statuses[]=resolved", "description": "PagerDuty incidents triggering emergency changes"}
@@ -528,6 +578,7 @@
           "description": "Emergency change tracking",
           "tip": "Track frequency of emergency changes. High rate indicates systemic issues. Each emergency change should have a follow-up to prevent recurrence.",
           "sources": [
+            {"provider": "azure", "command": "az ad pim-assignment list --query '[?state==`Active`].{user:principalName,role:roleDefinitionName}'", "description": "Azure PIM active assignments"},
             {"provider": "manual", "artifact": "Emergency change frequency report"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=emergency-change", "description": "Emergency change follow-up tickets"}
           ]
@@ -645,6 +696,8 @@
             {"provider": "gcp", "command": "gcloud container images list-tags <image> --format='table(digest,timestamp)'", "description": "GCP Container Registry image digests"},
             {"provider": "gcp", "command": "gcloud compute instances list --format='table(name,creationTimestamp,scheduling.preemptible)'", "description": "GCP VM creation dates (old VMs may indicate drift)"},
             {"provider": "aws", "command": "aws ec2 describe-launch-templates", "description": "EC2 launch templates"},
+            {"provider": "azure", "command": "az vm image list --publisher <publisher> --offer <offer> --sku <sku> --all", "description": "Azure VM image versions"},
+            {"provider": "azure", "command": "az acr repository show-manifests --name <registry> --repository <repo>", "description": "Azure Container Registry manifests/digests"},
             {"provider": "docker", "command": "docker images --format '{{.Repository}}:{{.Tag}}@{{.Digest}}'", "description": "Immutable container images"},
             {"provider": "terraform", "command": "terraform show -json", "description": "Infrastructure as Code state"}
           ]
@@ -656,6 +709,7 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"compute.instances.insert\" OR \"compute.instances.setMetadata\")' --format=json", "description": "GCP Compute Engine change audit"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventSource,AttributeValue=ec2.amazonaws.com", "description": "AWS EC2 API calls"},
+            {"provider": "azure", "command": "az monitor activity-log list --resource-type Microsoft.Compute/virtualMachines --query '[].{time:eventTimestamp,operation:operationName.value}'", "description": "Azure VM change audit"},
             {"provider": "driftctl", "command": "driftctl scan --from tfstate://terraform.tfstate", "description": "Driftctl IaC drift detection"}
           ]
         }
@@ -673,8 +727,10 @@
             {"provider": "gcp", "command": "gcloud compute security-policies describe <policy> --format=json", "description": "GCP Cloud Armor policy rules detail"},
             {"provider": "gcp", "command": "gcloud compute backend-services list --format='table(name,securityPolicy)'", "description": "GCP backend services with Cloud Armor"},
             {"provider": "aws", "command": "aws shield describe-protection", "description": "AWS Shield protection status"},
-            {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"},
-            {"provider": "aws", "command": "aws wafv2 list-web-acls --scope REGIONAL", "description": "WAF configuration"}
+            {"provider": "aws", "command": "aws wafv2 list-web-acls --scope REGIONAL", "description": "WAF configuration"},
+            {"provider": "azure", "command": "az network ddos-protection list --query '[].{name:name,state:provisioningState}'", "description": "Azure DDoS Protection Plans"},
+            {"provider": "azure", "command": "az network application-gateway waf-policy list --query '[].{name:name,mode:policySettings.mode}'", "description": "Azure WAF policies"},
+            {"provider": "cloudflare", "api": "/zones/{zone_id}/settings/security_level", "description": "Cloudflare security settings"}
           ]
         },
         {
@@ -684,6 +740,7 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"http_load_balancer\" AND jsonPayload.enforcedSecurityPolicy.outcome=\"DENY\"' --format=json", "description": "GCP Cloud Armor blocked requests"},
             {"provider": "aws", "command": "aws wafv2 get-sampled-requests --web-acl-arn <arn> --rule-metric-name ALL --scope REGIONAL --time-window Start=<start>,End=<end> --max-items 100", "description": "AWS WAF sampled requests"},
+            {"provider": "azure", "command": "az monitor activity-log list --resource-provider Microsoft.Network --query '[?contains(operationName.value,`DDoS`)].{time:eventTimestamp,operation:operationName.value}'", "description": "Azure DDoS events"},
             {"provider": "cloudflare", "api": "/zones/{zone_id}/firewall/events", "description": "Cloudflare firewall events"}
           ]
         },
@@ -693,6 +750,7 @@
           "tip": "Track attack frequency, types, and sources. Measure time to detect and mitigate. Report on false positive rates to ensure legitimate traffic isn't blocked.",
           "sources": [
             {"provider": "gcp", "command": "gcloud monitoring metrics list --filter='metric.type=starts_with(\"loadbalancing.googleapis.com/\")'", "description": "GCP LB metrics including Cloud Armor"},
+            {"provider": "azure", "command": "az network watcher flow-log list --query '[].{name:name,enabled:enabled}'", "description": "Azure Network Watcher flow logs for traffic analysis"},
             {"provider": "datadog", "api": "/api/v1/query?query=sum:waf.blocked_requests{*}", "description": "WAF blocked request trends"}
           ]
         }
@@ -704,9 +762,15 @@
         {
           "type": "configuration",
           "description": "High availability configuration",
+          "tip": "Verify multi-AZ/multi-region deployment for critical services. Load balancers should have health checks. Databases should have failover configured. Target 99.9%+ uptime.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud compute instance-groups managed list --format='table(name,zone,targetSize,autoscaled)'", "description": "GCP managed instance groups (HA compute)"},
+            {"provider": "gcp", "command": "gcloud sql instances describe <instance> --format='value(settings.availabilityType)'", "description": "GCP Cloud SQL availability type (REGIONAL = HA)"},
+            {"provider": "gcp", "command": "gcloud compute backend-services list --format='table(name,backends[].group)'", "description": "GCP load balancer backends (multi-zone)"},
             {"provider": "aws", "command": "aws rds describe-db-clusters --query 'DBClusters[].{id:DBClusterIdentifier,multiAZ:MultiAZ}'", "description": "RDS Multi-AZ status"},
             {"provider": "aws", "command": "aws elbv2 describe-target-health --target-group-arn <arn>", "description": "Load balancer health"},
+            {"provider": "azure", "command": "az vm availability-set list --query '[].{name:name,faultDomainCount:platformFaultDomainCount}'", "description": "Azure availability sets"},
+            {"provider": "azure", "command": "az sql db show --name <db> --server <server> --resource-group <rg> --query 'zoneRedundant'", "description": "Azure SQL zone redundancy"},
             {"provider": "kubernetes", "command": "kubectl get deployments -o json | jq '.items[].spec.replicas'", "description": "Kubernetes replica counts"}
           ]
         }
@@ -718,10 +782,13 @@
         {
           "type": "report",
           "description": "Cloud best practices compliance",
+          "tip": "Follow CIS benchmarks and cloud-native security best practices. Address findings from cloud security posture management tools. Prioritize critical/high severity.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"CIS_BENCHMARK\"' --format='table(finding.category,finding.severity,finding.state)'", "description": "GCP SCC CIS benchmark findings"},
+            {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP Security Health Analytics settings"},
             {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ProductName\":[{\"Value\":\"AWS Foundational Security Best Practices\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS FSBP findings"},
-            {"provider": "prowler", "command": "prowler aws --output-formats json", "description": "Prowler CIS benchmark scan"},
-            {"provider": "azure", "command": "az security assessment list", "description": "Azure Security Center assessments"}
+            {"provider": "azure", "command": "az security assessment list", "description": "Azure Security Center assessments"},
+            {"provider": "prowler", "command": "prowler aws --output-formats json", "description": "Prowler CIS benchmark scan"}
           ]
         }
       ]
@@ -732,8 +799,13 @@
         {
           "type": "report",
           "description": "CSPM findings and auto-remediation",
+          "tip": "Enable continuous security posture assessment. Configure auto-remediation for common misconfigurations. Alert on policy violations. Review drift reports weekly.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud scc posture-deployments list --organization=<org>", "description": "GCP Security Posture deployments"},
+            {"provider": "gcp", "command": "gcloud resource-manager org-policies list --organization=<org> --format='table(constraint,listPolicy,booleanPolicy)'", "description": "GCP Organization Policy enforcement"},
             {"provider": "aws", "command": "aws configservice get-compliance-details-by-config-rule --config-rule-name <rule>", "description": "AWS Config rule compliance"},
+            {"provider": "azure", "command": "az policy state list --query '[?complianceState==`NonCompliant`].{policy:policyDefinitionName,resource:resourceId}'", "description": "Azure Policy non-compliant resources"},
+            {"provider": "azure", "command": "az policy remediation list --query '[].{name:name,state:provisioningState}'", "description": "Azure Policy auto-remediation tasks"},
             {"provider": "wiz", "api": "/api/v1/issues", "description": "Wiz CSPM findings"},
             {"provider": "prisma", "api": "/v2/alert", "description": "Prisma Cloud alerts"}
           ]
@@ -941,9 +1013,14 @@
         {
           "type": "log",
           "description": "Account lifecycle automation logs",
+          "tip": "User provisioning/deprovisioning should be automated via SCIM or HR integration. Departing users must be disabled within 24 hours. Review orphaned accounts monthly.",
           "sources": [
-            {"provider": "okta", "api": "/api/v1/logs?filter=eventType eq \"user.lifecycle.create\"", "description": "Okta user lifecycle events"},
+            {"provider": "gcp", "command": "gcloud identity groups memberships list --group-email=<group>", "description": "GCP Cloud Identity group memberships"},
+            {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"CreateUser\" OR \"DeleteUser\")' --format=json", "description": "GCP user lifecycle audit logs"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateUser", "description": "IAM user creation events"},
+            {"provider": "azure", "command": "az ad user list --query '[?accountEnabled==`false`].{name:displayName,created:createdDateTime}'", "description": "Azure AD disabled users"},
+            {"provider": "azure", "api": "graph.microsoft.com/v1.0/auditLogs/directoryAudits?$filter=activityDisplayName eq 'Add user'", "description": "Azure AD user provisioning audit"},
+            {"provider": "okta", "api": "/api/v1/logs?filter=eventType eq \"user.lifecycle.create\"", "description": "Okta user lifecycle events"},
             {"provider": "scim", "description": "SCIM provisioning logs"}
           ]
         }
@@ -959,6 +1036,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud scc notifications list --organization=<org>", "description": "GCP SCC notification channels for incident alerting"},
             {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='severity=CRITICAL OR severity=ERROR'", "description": "GCP critical alerting policies"},
+            {"provider": "aws", "command": "aws sns list-subscriptions-by-topic --topic-arn <security-alerts-topic>", "description": "AWS SNS security alert subscriptions"},
+            {"provider": "azure", "command": "az monitor action-group list --query '[?contains(name,`security`) || contains(name,`incident`)].{name:name,email:emailReceivers}'", "description": "Azure incident action groups"},
             {"provider": "manual", "artifact": "Incident Response Plan document"},
             {"provider": "pagerduty", "api": "/response_plays", "description": "PagerDuty response plays"},
             {"provider": "opsgenie", "api": "/v2/policies", "description": "Opsgenie escalation policies"}
@@ -970,6 +1049,8 @@
           "tip": "Automated detection should cover: unauthorized access attempts, malware, data exfiltration, DoS, and privilege escalation. Response should be automated where possible.",
           "sources": [
             {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"ACTIVE\" AND severity=\"CRITICAL\"'", "description": "GCP SCC critical findings"},
+            {"provider": "aws", "command": "aws guardduty list-findings --detector-id <id> --finding-criteria '{\"Criterion\":{\"severity\":{\"Gte\":7}}}'", "description": "AWS GuardDuty high-severity findings"},
+            {"provider": "azure", "command": "az security alert list --query '[?status==`Active`].{name:name,severity:severity}'", "description": "Azure Security Center active alerts"},
             {"provider": "crowdstrike", "api": "/detects/queries/detects/v1", "description": "CrowdStrike detection alerts"},
             {"provider": "sentinel", "api": "/incidents", "description": "Azure Sentinel incidents"}
           ]
@@ -986,6 +1067,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'severity>=ERROR' --format='table(timestamp,resource.type,jsonPayload)' --limit=100", "description": "GCP error-level logs for incident correlation"},
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings?filter=state=\"ACTIVE\"", "description": "GCP SCC active findings"},
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventSource,AttributeValue=guardduty.amazonaws.com", "description": "AWS GuardDuty incident events"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?level==`Critical` || level==`Error`].{time:eventTimestamp,level:level,resource:resourceId}'", "description": "Azure critical/error activity logs"},
             {"provider": "servicenow", "api": "/api/now/table/incident", "description": "ServiceNow incidents"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=type=Incident", "description": "Jira incident tickets"},
             {"provider": "pagerduty", "api": "/incidents", "description": "PagerDuty incident history"}
@@ -996,6 +1079,8 @@
           "description": "Incident metrics",
           "tip": "Track MTTD (detect), MTTA (acknowledge), MTTR (resolve). Monitor incident volume trends. High-severity incidents should decrease over time.",
           "sources": [
+            {"provider": "aws", "command": "aws securityhub get-insights --insight-arns <arn>", "description": "AWS Security Hub incident insights"},
+            {"provider": "azure", "command": "az security alert list --query 'length([?status==`Resolved`])'", "description": "Azure resolved security alerts count"},
             {"provider": "pagerduty", "api": "/analytics/metrics/incidents/all", "description": "PagerDuty incident analytics"},
             {"provider": "manual", "artifact": "Incident metrics dashboard"}
           ]
@@ -1011,6 +1096,8 @@
           "tip": "Every significant incident requires a blameless post-mortem within 5 business days. Document root cause, timeline, impact, and corrective actions. Track action item completion.",
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:\"scc\" AND severity>=WARNING' --format=json", "description": "GCP SCC activity during incident window"},
+            {"provider": "aws", "command": "aws ssm-incidents list-incident-records --query 'incidentRecordSummaries[].{title:title,status:status,impact:impact}'", "description": "AWS Incident Manager records"},
+            {"provider": "azure", "command": "az security alert list --query '[?status==`Resolved`].{name:name,time:timeGeneratedUtc}'", "description": "Azure resolved security alerts for post-mortem"},
             {"provider": "manual", "artifact": "Post-mortem/After Action Report documents"},
             {"provider": "blameless", "api": "/api/v1/incidents/{id}/retrospective", "description": "Blameless retrospectives"},
             {"provider": "incidentio", "api": "/v2/post_incident_tasks", "description": "Incident.io follow-up tasks"}
@@ -1021,6 +1108,7 @@
           "description": "Post-incident action tracking",
           "tip": "Track action item completion rate and time to completion. Recurring incidents indicate systemic issues. Root causes should be permanently addressed.",
           "sources": [
+            {"provider": "azure", "command": "az boards work-item query --wiql \"SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS 'post-mortem'\"", "description": "Azure DevOps post-mortem work items"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=post-mortem-action", "description": "JIRA post-mortem action items"},
             {"provider": "manual", "artifact": "Action item completion report"}
           ]
@@ -1158,6 +1246,8 @@
           "tip": "IaC scanning should run on every PR/commit. Block merges on HIGH/CRITICAL findings. Track findings over time to show improvement.",
           "sources": [
             {"provider": "gcp", "command": "gcloud builds list --filter='substitutions.TRIGGER_NAME:*security*' --format='table(id,status,createTime)'", "description": "GCP Cloud Build security scan runs"},
+            {"provider": "aws", "command": "aws codepipeline list-action-executions --pipeline-name <pipeline> --filter pipelineExecutionId=<execution>", "description": "AWS CodePipeline IaC scan actions"},
+            {"provider": "azure", "command": "az pipelines runs list --query '[?contains(name,`security`) || contains(name,`scan`)].{id:id,result:result}'", "description": "Azure Pipelines security scan runs"},
             {"provider": "checkov", "command": "checkov -d . --output json", "description": "Checkov IaC scan"},
             {"provider": "tfsec", "command": "tfsec . --format json", "description": "tfsec Terraform scan"},
             {"provider": "kics", "command": "kics scan -p . -o json", "description": "KICS IaC scan"},
@@ -1170,6 +1260,7 @@
           "tip": "Verify IaC scanning is mandatory in CI/CD. Check that bypass requires approval. All infrastructure changes should flow through IaC (no manual changes).",
           "sources": [
             {"provider": "gcp", "command": "gcloud builds triggers list --format='table(name,github.owner,github.name)'", "description": "GCP Cloud Build triggers"},
+            {"provider": "azure", "command": "az repos policy list --query '[?type.displayName==`Required reviewers`].{repo:repositoryId,enabled:isEnabled}'", "description": "Azure DevOps required reviewer policies"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/branches/{branch}/protection", "description": "GitHub branch protection with required checks"},
             {"provider": "gitlab", "api": "/projects/{id}/merge_request_approval_rules", "description": "GitLab MR approval rules"}
           ]
@@ -1179,6 +1270,7 @@
           "description": "IaC scan findings trends",
           "tip": "Show declining trend in IaC findings over time. Track time-to-remediate for identified issues. Report on scan coverage (% of repos scanned).",
           "sources": [
+            {"provider": "azure", "command": "az security sub-assessment list --query '[?status.code==`Unhealthy`].{name:displayName,severity:status.severity}'", "description": "Azure Defender for DevOps findings"},
             {"provider": "bridgecrew", "api": "/api/v1/suppressions/justifications", "description": "Bridgecrew suppression justifications"},
             {"provider": "snyk", "api": "/org/{orgId}/project/{projectId}/history", "description": "Snyk project issue history"}
           ]
@@ -1197,6 +1289,8 @@
             {"provider": "gcp", "command": "gcloud monitoring channels list --format='table(displayName,type,enabled)'", "description": "GCP notification channels"},
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/notificationConfigs", "description": "GCP SCC notification configs"},
             {"provider": "aws", "command": "aws cloudwatch describe-alarms --alarm-types MetricAlarm", "description": "CloudWatch alarms"},
+            {"provider": "azure", "command": "az monitor alert-rules list --query '[].{name:name,enabled:isEnabled,severity:severity}'", "description": "Azure Monitor alert rules"},
+            {"provider": "azure", "command": "az monitor action-group list --query '[].{name:name,email:emailReceivers,sms:smsReceivers}'", "description": "Azure Monitor action groups"},
             {"provider": "pagerduty", "api": "/services", "description": "PagerDuty service integrations"},
             {"provider": "splunk", "api": "/services/alerts/fired_alerts", "description": "Splunk alert history"}
           ]
@@ -1206,6 +1300,7 @@
           "description": "Alert response evidence",
           "tip": "Document response to every critical alert. Track Mean Time to Acknowledge (MTTA) and Mean Time to Resolve (MTTR). Alerts without response are compliance gaps.",
           "sources": [
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?category==`Alert`].{time:eventTimestamp,name:operationName.value,status:status.value}'", "description": "Azure alert activity log"},
             {"provider": "pagerduty", "api": "/incidents", "description": "PagerDuty incident history with response times"},
             {"provider": "opsgenie", "api": "/v2/alerts", "description": "OpsGenie alert history"},
             {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"cloud_function\" AND severity>=ERROR'", "description": "GCP alert function executions"}
@@ -1217,6 +1312,7 @@
           "tip": "Track alert volume, false positive rate, and response times. High volume or low response rate indicates problems. Report on alert coverage (% of critical systems monitored).",
           "sources": [
             {"provider": "gcp", "command": "gcloud monitoring alert-policies list --filter='enabled=true' --format='value(displayName)' | wc -l", "description": "GCP active alert count"},
+            {"provider": "azure", "command": "az monitor metrics alert list --query 'length([?enabled==`true`])'", "description": "Azure active alert count"},
             {"provider": "datadog", "api": "/api/v1/monitor", "description": "Datadog monitor inventory"}
           ]
         }
@@ -1228,8 +1324,13 @@
         {
           "type": "documentation",
           "description": "Monitored event types documentation",
+          "tip": "Document all event types being collected: authentication, authorization, data access, configuration changes, network events. Ensure coverage of NIST AU-2 requirements.",
           "sources": [
+            {"provider": "gcp", "command": "gcloud logging sinks list --format='table(name,destination,filter)'", "description": "GCP log sinks with event filters"},
+            {"provider": "gcp", "command": "gcloud logging logs list --format='table(name)'", "description": "GCP available log types"},
             {"provider": "aws", "command": "aws cloudtrail get-event-selectors --trail-name <trail>", "description": "CloudTrail event selectors"},
+            {"provider": "azure", "command": "az monitor diagnostic-settings list --resource <resource> --query '[].logs[].category'", "description": "Azure diagnostic log categories"},
+            {"provider": "azure", "command": "az monitor log-analytics workspace table list --workspace-name <workspace> --resource-group <rg> --query '[].name'", "description": "Azure Log Analytics tables (event types)"},
             {"provider": "manual", "artifact": "Log source inventory with event types"},
             {"provider": "splunk", "api": "/services/data/inputs", "description": "Splunk input configurations"}
           ]
@@ -1242,9 +1343,14 @@
         {
           "type": "configuration",
           "description": "Log access controls",
+          "tip": "Restrict log access to authorized personnel only. Prevent log tampering/deletion. Audit log access. Separate duties between log administrators and security analysts.",
           "sources": [
-            {"provider": "splunk", "api": "/services/authorization/roles", "description": "Splunk role-based access"},
+            {"provider": "gcp", "command": "gcloud logging buckets describe <bucket> --location=<location> --format='value(retentionDays,locked)'", "description": "GCP log bucket access and retention"},
+            {"provider": "gcp", "command": "gcloud projects get-iam-policy <project> --flatten='bindings[].members' --filter='bindings.role:roles/logging*'", "description": "GCP logging IAM bindings"},
             {"provider": "aws", "command": "aws logs describe-resource-policies", "description": "CloudWatch Logs resource policies"},
+            {"provider": "azure", "command": "az monitor log-analytics workspace show --workspace-name <workspace> --resource-group <rg> --query 'retentionInDays'", "description": "Azure Log Analytics retention"},
+            {"provider": "azure", "command": "az role assignment list --scope <log-analytics-workspace-id> --query '[].{principal:principalName,role:roleDefinitionName}'", "description": "Azure Log Analytics access controls"},
+            {"provider": "splunk", "api": "/services/authorization/roles", "description": "Splunk role-based access"},
             {"provider": "elastic", "api": "/_security/role", "description": "Elasticsearch security roles"}
           ]
         }
@@ -1299,7 +1405,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='category=\"COMPLIANCE\"' --format='table(finding.category,finding.description,finding.state)'", "description": "GCP SCC compliance findings"},
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/sources/-/findings?filter=sourceProperties.compliance_standard:*", "description": "GCP SCC compliance-mapped findings"},
-            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS Security Hub compliance failures"}
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS Security Hub compliance failures"},
+            {"provider": "azure", "command": "az security regulatory-compliance-assessments list --standard-name <standard>", "description": "Azure regulatory compliance assessments"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/secureScores?api-version=2020-01-01", "description": "Azure Secure Score (compliance metric)"}
           ]
         }
       ]
@@ -1313,6 +1421,8 @@
           "tip": "Publish security.txt at /.well-known/security.txt per RFC 9116. Include contact email, PGP key, policy URL, and acknowledgments page. Respond to valid reports within 5 business days.",
           "sources": [
             {"provider": "gcp", "command": "gcloud compute url-maps describe <url-map> --format='value(defaultService)'", "description": "GCP URL map for security.txt hosting"},
+            {"provider": "aws", "command": "aws s3 cp s3://<bucket>/.well-known/security.txt -", "description": "AWS S3 security.txt verification"},
+            {"provider": "azure", "command": "az storage blob download --account-name <account> --container-name '$web' --name '.well-known/security.txt' --file -", "description": "Azure Blob security.txt verification"},
             {"provider": "manual", "artifact": "security.txt file and VDP policy"},
             {"provider": "manual", "artifact": "Vulnerability disclosure policy document"}
           ]
@@ -1340,6 +1450,10 @@
             {"provider": "gcp", "command": "gcloud container binauthz policy export", "description": "GCP Binary Authorization policy (secure deployments)"},
             {"provider": "gcp", "command": "gcloud artifacts repositories list --format='table(name,format,mode)'", "description": "GCP Artifact Registry repos (secure artifact storage)"},
             {"provider": "gcp", "command": "gcloud builds triggers list --format='table(name,filename,substitutions)'", "description": "GCP Cloud Build triggers with security steps"},
+            {"provider": "aws", "command": "aws codepipeline list-pipelines", "description": "AWS CodePipeline CI/CD pipelines"},
+            {"provider": "aws", "command": "aws codebuild batch-get-projects --names <project>", "description": "AWS CodeBuild security configuration"},
+            {"provider": "azure", "command": "az pipelines list --query '[].{name:name,path:path}'", "description": "Azure DevOps pipelines"},
+            {"provider": "azure", "command": "az acr task list --registry <registry> --query '[].{name:name,status:status}'", "description": "Azure ACR build tasks with security steps"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/code-scanning/alerts", "description": "GitHub code scanning alerts"},
             {"provider": "sonarqube", "api": "/api/issues/search", "description": "SonarQube security hotspots"}
           ]
@@ -1377,7 +1491,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud scc sources list --organization=<org>", "description": "GCP SCC assessment sources configured"},
             {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --show-occurrences --occurrence-filter='kind=\"VULNERABILITY\"'", "description": "GCP container vulnerability assessments"},
-            {"provider": "aws", "command": "aws inspector2 list-coverage", "description": "AWS Inspector coverage"}
+            {"provider": "aws", "command": "aws inspector2 list-coverage", "description": "AWS Inspector coverage"},
+            {"provider": "azure", "command": "az security assessment list --query '[].{name:displayName,status:status.code}'", "description": "Azure Defender security assessments"},
+            {"provider": "azure", "command": "az acr task logs list --registry <registry> --query '[?contains(run.task, `scan`)]'", "description": "Azure ACR security scan logs"}
           ]
         }
       ]
@@ -1392,6 +1508,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --compare-duration=2592000s --filter='state=\"ACTIVE\"' --format='table(finding.category,stateChange)'", "description": "GCP SCC 30-day trend (new vs resolved findings)"},
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/findings:group?groupBy=category", "description": "GCP SCC findings grouped by category (trends)"},
+            {"provider": "aws", "command": "aws securityhub get-insight-results --insight-arn <arn>", "description": "AWS Security Hub insight trends"},
+            {"provider": "azure", "command": "az security secure-score-controls list --query '[].{name:displayName,current:current,max:max}'", "description": "Azure Secure Score controls (KPI tracking)"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/secureScoreControlDefinitions?api-version=2020-01-01", "description": "Azure Secure Score trends"},
             {"provider": "manual", "artifact": "Security metrics dashboard"},
             {"provider": "manual", "artifact": "Security program effectiveness reports"}
           ]
@@ -1403,6 +1522,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud billing budgets list --billing-account=<account> --filter='displayName:security'", "description": "GCP security-related budget tracking"},
             {"provider": "gcp", "command": "gcloud logging metrics list --format='table(name,filter)'", "description": "GCP security logging metrics defined"},
+            {"provider": "aws", "command": "aws ce get-cost-and-usage --time-period Start=2025-01-01,End=2025-12-31 --granularity MONTHLY --filter '{\"Tags\":{\"Key\":\"security\"}}'", "description": "AWS security cost tracking"},
+            {"provider": "azure", "command": "az consumption usage list --query '[?contains(instanceName, `security`)]'", "description": "Azure security resource consumption"},
             {"provider": "manual", "artifact": "Security tool utilization reports"}
           ]
         }
@@ -1418,6 +1539,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud artifacts sbom export --uri=<artifact-uri>", "description": "GCP Artifact Registry SBOM export"},
             {"provider": "gcp", "api": "containeranalysis.googleapis.com/v1/projects/{project}/occurrences?filter=kind=\"SBOM\"", "description": "GCP Container Analysis SBOM occurrences"},
+            {"provider": "aws", "command": "aws inspector2 list-findings --filter-criteria '{\"findingType\":[{\"comparison\":\"EQUALS\",\"value\":\"SBOM\"}]}'", "description": "AWS Inspector SBOM inventory"},
+            {"provider": "azure", "command": "az acr manifest list-metadata --registry <registry> --name <repo>", "description": "Azure ACR container manifest inventory"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/softwareInventories?api-version=2021-05-01-preview", "description": "Azure Defender software inventory"},
             {"provider": "syft", "command": "syft <image> -o spdx-json", "description": "SBOM generation with Syft"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/dependency-graph/sbom", "description": "GitHub SBOM export"}
           ]
@@ -1429,6 +1553,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --show-occurrences --occurrence-filter='kind=\"VULNERABILITY\"' --format=json", "description": "GCP Artifact Registry vulnerability scan results"},
             {"provider": "gcp", "command": "gcloud container binauthz attestations list --artifact-url=<image>", "description": "GCP Binary Authorization attestations (supply chain verification)"},
+            {"provider": "aws", "command": "aws ecr describe-image-scan-findings --repository-name <repo> --image-id imageTag=<tag>", "description": "AWS ECR vulnerability scan results"},
+            {"provider": "azure", "command": "az acr repository show-manifests --name <registry> --repository <repo> --detail", "description": "Azure ACR image manifest details"},
+            {"provider": "azure", "command": "az security sub-assessment list --assessed-resource-id <registry-id>", "description": "Azure container vulnerability sub-assessments"},
             {"provider": "grype", "command": "grype sbom:<sbom-file> -o json", "description": "SBOM vulnerability scan with Grype"},
             {"provider": "snyk", "api": "/v1/org/{orgId}/dependencies", "description": "Snyk dependency vulnerabilities"}
           ]
@@ -1445,6 +1572,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud organizations get-iam-policy <org> --flatten='bindings[].members' --filter='bindings.role:roles/securitycenter*' --format='table(bindings.role,bindings.members)'", "description": "GCP organization security role assignments"},
             {"provider": "gcp", "command": "gcloud access-context-manager policies list --organization=<org>", "description": "GCP organization access policies (executive-level controls)"},
+            {"provider": "aws", "command": "aws organizations describe-organization", "description": "AWS Organization structure (governance)"},
+            {"provider": "aws", "command": "aws iam list-policies --scope Local --only-attached --query 'Policies[?contains(PolicyName, `Security`)]'", "description": "AWS security policies (executive oversight)"},
+            {"provider": "azure", "command": "az role assignment list --scope /providers/Microsoft.Management/managementGroups/<mg> --query '[?contains(roleDefinitionName, `Security`)]'", "description": "Azure management group security roles"},
+            {"provider": "azure", "command": "az policy assignment list --scope /providers/Microsoft.Management/managementGroups/<mg>", "description": "Azure top-level policy assignments (governance)"},
             {"provider": "manual", "artifact": "Security steering committee meeting minutes"},
             {"provider": "manual", "artifact": "Executive security briefing records"}
           ]
@@ -1455,6 +1586,9 @@
           "tip": "Provide executive-level dashboards showing security posture, risk trends, and compliance status. Monthly or quarterly reporting cadence recommended.",
           "sources": [
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP organization security posture for executive reporting"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"SeverityLabel\":[{\"Value\":\"CRITICAL\",\"Comparison\":\"EQUALS\"}]}' --max-items 10", "description": "AWS Security Hub critical findings summary"},
+            {"provider": "azure", "command": "az security secure-score list --query '[].{name:displayName,score:currentScore,max:maxScore}'", "description": "Azure Secure Score executive summary"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/secureScores?api-version=2020-01-01", "description": "Azure security posture API"},
             {"provider": "manual", "artifact": "Board-level security reports"},
             {"provider": "manual", "artifact": "Risk register with executive sign-off"}
           ]
@@ -1471,6 +1605,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud compute disks describe <disk> --format='table(name,replicaZones)'", "description": "GCP disk replication zones (affects RPO)"},
             {"provider": "gcp", "command": "gcloud sql instances describe <instance> --format='table(settings.backupConfiguration)'", "description": "GCP Cloud SQL backup configuration (RPO indicator)"},
+            {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{Name:DBInstanceIdentifier,BackupRetention:BackupRetentionPeriod}'", "description": "AWS RDS backup retention (RPO indicator)"},
+            {"provider": "azure", "command": "az sql db show --name <db> --server <server> --resource-group <rg> --query '{backup:earliestRestoreDate,redundancy:currentBackupStorageRedundancy}'", "description": "Azure SQL backup configuration (RPO indicator)"},
+            {"provider": "azure", "command": "az disk show --name <disk> --resource-group <rg> --query '{name:name,zones:zones,sku:sku.name}'", "description": "Azure disk replication zones"},
             {"provider": "manual", "artifact": "Business Impact Analysis with RTO/RPO"},
             {"provider": "manual", "artifact": "Disaster Recovery Plan"}
           ]
@@ -1482,7 +1619,9 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud compute instances describe <instance> --format='table(scheduling.automaticRestart,scheduling.onHostMaintenance)'", "description": "GCP VM automatic restart settings"},
             {"provider": "gcp", "command": "gcloud compute instance-groups managed describe <mig> --format='table(autoHealingPolicies)'", "description": "GCP managed instance group auto-healing"},
-            {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{Name:DBInstanceIdentifier,MultiAZ:MultiAZ,BackupRetention:BackupRetentionPeriod}'", "description": "AWS RDS multi-AZ and backup settings"}
+            {"provider": "aws", "command": "aws rds describe-db-instances --query 'DBInstances[].{Name:DBInstanceIdentifier,MultiAZ:MultiAZ,BackupRetention:BackupRetentionPeriod}'", "description": "AWS RDS multi-AZ and backup settings"},
+            {"provider": "azure", "command": "az vm availability-set list --query '[].{name:name,faultDomains:platformFaultDomainCount}'", "description": "Azure availability set configuration"},
+            {"provider": "azure", "command": "az sql db failover-group list --server <server> --resource-group <rg>", "description": "Azure SQL failover groups for automatic failover"}
           ]
         }
       ]
@@ -1497,6 +1636,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud deployment-manager deployments list --format='table(name,operation.status)'", "description": "GCP Deployment Manager deployments (infrastructure-as-code for recovery)"},
             {"provider": "gcp", "command": "gcloud compute snapshots list --format='table(name,sourceDisk,creationTimestamp,status)'", "description": "GCP disk snapshots available for recovery"},
+            {"provider": "azure", "command": "az snapshot list --query '[].{name:name,source:creationData.sourceResourceId,timeCreated:timeCreated}'", "description": "Azure disk snapshots for recovery"},
+            {"provider": "azure", "command": "az deployment group list --resource-group <rg> --query '[].{name:name,state:properties.provisioningState}'", "description": "Azure ARM deployments (infrastructure-as-code)"},
             {"provider": "manual", "artifact": "Disaster Recovery Plan document"},
             {"provider": "manual", "artifact": "Business Continuity Plan"}
           ]
@@ -1509,7 +1650,9 @@
             {"provider": "gcp", "command": "gcloud compute regions list --format='table(name,status)'", "description": "GCP available regions for DR"},
             {"provider": "gcp", "command": "gcloud container clusters list --format='table(name,location,status)'", "description": "GCP GKE clusters (multi-region availability)"},
             {"provider": "terraform", "command": "terraform plan -var='environment=dr'", "description": "Terraform DR environment plan"},
-            {"provider": "aws", "command": "aws cloudformation describe-stacks --query 'Stacks[?contains(StackName,`dr`)].{Name:StackName,Status:StackStatus}'", "description": "AWS CloudFormation DR stacks"}
+            {"provider": "aws", "command": "aws cloudformation describe-stacks --query 'Stacks[?contains(StackName,`dr`)].{Name:StackName,Status:StackStatus}'", "description": "AWS CloudFormation DR stacks"},
+            {"provider": "azure", "command": "az account list-locations --query '[].{name:displayName,paired:metadata.pairedRegion[0].name}'", "description": "Azure regions with paired DR regions"},
+            {"provider": "azure", "command": "az aks list --query '[].{name:name,location:location}'", "description": "Azure AKS clusters (multi-region availability)"}
           ]
         }
       ]
@@ -1538,7 +1681,9 @@
             {"provider": "gcp", "command": "gcloud sql instances describe <instance> --format='json(settings.backupConfiguration)'", "description": "GCP Cloud SQL backup policy"},
             {"provider": "gcp", "command": "gcloud compute resource-policies list --filter='snapshotSchedulePolicy:*' --format='table(name,snapshotSchedulePolicy)'", "description": "GCP snapshot schedule policies"},
             {"provider": "gcp", "command": "gcloud storage buckets describe gs://<backup-bucket> --format='table(lifecycle,versioning)'", "description": "GCP backup bucket lifecycle/versioning"},
-            {"provider": "aws", "command": "aws backup list-backup-plans", "description": "AWS Backup plans"}
+            {"provider": "aws", "command": "aws backup list-backup-plans", "description": "AWS Backup plans"},
+            {"provider": "azure", "command": "az backup policy list --resource-group <rg> --vault-name <vault> --query '[].{name:name,retention:properties.retentionPolicy}'", "description": "Azure Backup policies and retention"},
+            {"provider": "azure", "command": "az sql db show --name <db> --server <server> --resource-group <rg> --query 'longTermRetentionBackupResourceId'", "description": "Azure SQL long-term retention"}
           ]
         }
       ]
@@ -1553,8 +1698,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud sql backups describe <backup-id> --instance=<instance>", "description": "GCP Cloud SQL backup details for restore testing"},
             {"provider": "gcp", "command": "gcloud compute instances create <dr-test-vm> --source-snapshot=<snapshot>", "description": "GCP snapshot restore test"},
-            {"provider": "manual", "artifact": "DR test execution records and results"},
-            {"provider": "aws", "command": "aws drs describe-recovery-instances", "description": "AWS Elastic Disaster Recovery status"}
+            {"provider": "aws", "command": "aws drs describe-recovery-instances", "description": "AWS Elastic Disaster Recovery status"},
+            {"provider": "azure", "command": "az site-recovery protected-item list --resource-group <rg> --vault-name <vault>", "description": "Azure Site Recovery protected items"},
+            {"provider": "azure", "command": "az backup restore restore-azurefiles --vault-name <vault> --resource-group <rg> --target-storage-account <account>", "description": "Azure Backup restore test"},
+            {"provider": "manual", "artifact": "DR test execution records and results"}
           ]
         },
         {
@@ -1564,6 +1711,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud monitoring metrics list --filter='metric.type:uptime'", "description": "GCP uptime metrics for availability tracking"},
             {"provider": "gcp", "api": "monitoring.googleapis.com/v3/projects/{project}/timeSeries?filter=metric.type=\"custom.googleapis.com/dr/recovery_time\"", "description": "GCP custom DR metrics"},
+            {"provider": "azure", "command": "az monitor metrics list --resource <id> --metric 'Availability' --interval PT1H", "description": "Azure availability metrics"},
+            {"provider": "azure", "command": "az site-recovery job list --resource-group <rg> --vault-name <vault> --query '[].{name:name,status:status,startTime:startTime}'", "description": "Azure Site Recovery job history (failover times)"},
             {"provider": "manual", "artifact": "DR test metrics report (actual RTO/RPO vs targets)"},
             {"provider": "manual", "artifact": "Chaos engineering experiment results"}
           ]
@@ -1579,6 +1728,8 @@
           "tip": "Demonstrate ongoing security maturity improvements. Track POA&M closures, vulnerability reduction trends, and security control enhancements over time.",
           "sources": [
             {"provider": "gcp", "command": "gcloud scc findings list --organization=<org> --filter='state=\"INACTIVE\"' --format='table(finding.category,finding.eventTime)'", "description": "GCP SCC resolved findings (improvements)"},
+            {"provider": "aws", "command": "aws securityhub get-findings --filters '{\"RecordState\":[{\"Value\":\"ARCHIVED\",\"Comparison\":\"EQUALS\"}]}'", "description": "AWS Security Hub archived/resolved findings"},
+            {"provider": "azure", "command": "az security assessment list --query '[?status.code==`Healthy`].{name:displayName,time:metadata.assessmentType}'", "description": "Azure healthy security assessments"},
             {"provider": "jira", "api": "/rest/api/3/search?jql=labels=security-improvement", "description": "Security improvement tickets"},
             {"provider": "manual", "artifact": "Security roadmap and improvement plans"},
             {"provider": "manual", "artifact": "POA&M closure reports"}
@@ -1590,6 +1741,7 @@
           "tip": "Show measurable improvement: fewer vulnerabilities, faster remediation, better coverage. Compare current state to baseline from 6-12 months ago.",
           "sources": [
             {"provider": "gcp", "api": "securitycenter.googleapis.com/v1/organizations/{org}/securityHealthAnalyticsSettings", "description": "GCP Security Health Analytics posture"},
+            {"provider": "azure", "command": "az security secure-score list --query '[].{name:displayName,current:current,max:max}'", "description": "Azure Secure Score trends"},
             {"provider": "qualys", "api": "/api/2.0/fo/report/scorecards/", "description": "Qualys security scorecard trends"}
           ]
         }
@@ -1605,9 +1757,11 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud compute ssl-policies list --format='table(name,minTlsVersion,profile)'", "description": "GCP SSL policies with TLS version"},
             {"provider": "gcp", "command": "gcloud compute target-https-proxies list --format='table(name,sslPolicy)'", "description": "GCP HTTPS proxies SSL policy assignment"},
+            {"provider": "aws", "command": "aws elbv2 describe-listeners --load-balancer-arn <arn> --query 'Listeners[].{Port:Port,Protocol:Protocol}'", "description": "Load balancer TLS configuration"},
+            {"provider": "azure", "command": "az network application-gateway ssl-policy show --gateway-name <gw> --resource-group <rg>", "description": "Azure App Gateway SSL policy"},
+            {"provider": "azure", "command": "az keyvault certificate list --vault-name <vault> --query '[].{name:name,expires:attributes.expires}'", "description": "Azure Key Vault certificates"},
             {"provider": "ssllabs", "api": "/api/v3/analyze?host=<domain>", "description": "SSL Labs scan results"},
-            {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"},
-            {"provider": "aws", "command": "aws elbv2 describe-listeners --load-balancer-arn <arn> --query 'Listeners[].{Port:Port,Protocol:Protocol}'", "description": "Load balancer TLS configuration"}
+            {"provider": "testssl", "command": "testssl.sh --json <domain>", "description": "testssl.sh scan"}
           ]
         },
         {
@@ -1616,6 +1770,7 @@
           "tip": "Internal service-to-service communication should also use TLS/mTLS. Verify mesh encryption if using service mesh. Check for any plaintext internal traffic.",
           "sources": [
             {"provider": "gcp", "command": "gcloud compute backend-services describe <service> --format='value(securitySettings)'", "description": "GCP backend service security settings"},
+            {"provider": "azure", "command": "az webapp config show --name <app> --resource-group <rg> --query 'minTlsVersion'", "description": "Azure App Service minimum TLS version"},
             {"provider": "istio", "command": "istioctl analyze --all-namespaces", "description": "Istio mTLS analysis"},
             {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o yaml", "description": "Kubernetes mTLS policies"}
           ]
@@ -1662,6 +1817,9 @@
             {"provider": "gcp", "command": "gcloud config configurations list", "description": "GCP config configurations"},
             {"provider": "ansible", "command": "ansible-inventory --list", "description": "Ansible managed inventory"},
             {"provider": "aws", "command": "aws ssm describe-instance-information", "description": "SSM managed instances"},
+            {"provider": "azure", "command": "az vm run-command list --resource-group <rg> --vm-name <vm>", "description": "Azure VM run commands (automation)"},
+            {"provider": "azure", "command": "az automation account list --query '[].{name:name,state:state}'", "description": "Azure Automation accounts"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Compute/virtualMachines?api-version=2023-09-01", "description": "Azure VM configuration API"},
             {"provider": "puppet", "api": "/pdb/query/v4/nodes", "description": "Puppet managed nodes"}
           ]
         },
@@ -1672,6 +1830,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"compute.instances.setMetadata\" OR \"compute.instances.setTags\")' --format=json", "description": "GCP VM configuration change audit"},
             {"provider": "aws", "command": "aws config get-compliance-details-by-config-rule --config-rule-name <rule>", "description": "AWS Config compliance details"},
+            {"provider": "azure", "command": "az monitor activity-log list --resource-type Microsoft.Compute/virtualMachines --query '[?contains(operationName.value, `write`)].{time:eventTimestamp,operation:operationName.localizedValue}'", "description": "Azure VM configuration change audit"},
+            {"provider": "azure", "command": "az policy state list --filter \"complianceState eq 'NonCompliant'\" --query '[].{resource:resourceId,policy:policyDefinitionName}'", "description": "Azure Policy drift detection"},
             {"provider": "chef", "api": "/compliance/reporting/nodes", "description": "Chef InSpec compliance reports"}
           ]
         }
@@ -1689,6 +1849,9 @@
             {"provider": "gcp", "command": "gcloud container images describe <image> --format='value(image_summary.fully_qualified_digest)'", "description": "GCP container image digest verification"},
             {"provider": "gcp", "api": "binaryauthorization.googleapis.com/v1/projects/{project}/policy", "description": "GCP Binary Authorization policy"},
             {"provider": "aws", "command": "aws configservice get-resource-config-history --resource-type AWS::EC2::Instance --resource-id <id>", "description": "AWS Config resource history"},
+            {"provider": "azure", "command": "az vm show --name <vm> --resource-group <rg> --query '{integrityMonitoring:securityProfile}'", "description": "Azure VM integrity monitoring status"},
+            {"provider": "azure", "command": "az acr manifest list-metadata --registry <registry> --name <repo> --query '[].{digest:digest,createdTime:createdTime}'", "description": "Azure ACR container image digests"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.ContainerRegistry/registries/{registry}/webhooks", "description": "Azure ACR webhooks for image verification"},
             {"provider": "tripwire", "api": "/api/v1/elements", "description": "Tripwire element status"},
             {"provider": "ossec", "artifact": "OSSEC syscheck reports"},
             {"provider": "sigstore", "command": "cosign verify <image>", "description": "Sigstore container signature verification"}
@@ -1701,6 +1864,8 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'resource.type=\"gce_instance\" AND jsonPayload.event_type=\"integrity_violation\"'", "description": "GCP Shielded VM integrity violation logs"},
             {"provider": "aws", "command": "aws guardduty list-findings --detector-id <id> --finding-criteria '{\"Criterion\":{\"type\":{\"Eq\":[\"Persistence:IAMUser/UserPermissions\"]}}}'", "description": "AWS GuardDuty persistence findings"},
+            {"provider": "azure", "command": "az security alert list --query '[?contains(alertType, `Integrity`)].{name:alertDisplayName,severity:severity,status:status}'", "description": "Azure Defender integrity alerts"},
+            {"provider": "azure", "command": "az monitor activity-log list --resource-type Microsoft.Compute/virtualMachines --query '[?operationName.value==`Microsoft.Compute/virtualMachines/write`]'", "description": "Azure VM modification audit"},
             {"provider": "crowdstrike", "api": "/detects/queries/detects/v1", "description": "CrowdStrike detection events"}
           ]
         }
@@ -1796,6 +1961,9 @@
             {"provider": "gcp", "command": "gcloud resource-manager folders list --organization=<org>", "description": "GCP folder structure for tenant isolation"},
             {"provider": "gcp", "command": "gcloud compute sole-tenancy node-templates list", "description": "GCP sole-tenant nodes (dedicated hardware)"},
             {"provider": "aws", "command": "aws ec2 describe-instances --query 'Reservations[].Instances[].{id:InstanceId,tenancy:Placement.Tenancy}'", "description": "EC2 tenancy configuration"},
+            {"provider": "azure", "command": "az account management-group list --query '[].{name:displayName,id:id}'", "description": "Azure management groups (isolation hierarchy)"},
+            {"provider": "azure", "command": "az vm list --query '[].{name:name,hostGroup:hostGroup}'", "description": "Azure dedicated hosts (tenant isolation)"},
+            {"provider": "azure", "command": "az aks show --resource-group <rg> --name <cluster> --query 'networkProfile'", "description": "Azure AKS network isolation"},
             {"provider": "kubernetes", "command": "kubectl get networkpolicies --all-namespaces -o json", "description": "Kubernetes network policies for isolation"},
             {"provider": "kubernetes", "command": "kubectl get resourcequotas --all-namespaces -o yaml", "description": "Kubernetes resource quotas per namespace"}
           ]
@@ -1805,6 +1973,7 @@
           "description": "Tenant isolation architecture",
           "tip": "Document isolation boundaries between tenants. Include network, compute, storage, and data isolation. Shared services should be explicitly called out with additional controls.",
           "sources": [
+            {"provider": "azure", "api": "management.azure.com/providers/Microsoft.Management/managementGroups?api-version=2021-04-01", "description": "Azure management group hierarchy API"},
             {"provider": "manual", "artifact": "Multi-tenancy architecture diagram"},
             {"provider": "manual", "artifact": "Shared services risk assessment"}
           ]
@@ -1823,6 +1992,9 @@
             {"provider": "gcp", "command": "gcloud anthos auth describe <membership>", "description": "GCP Anthos service mesh mTLS status"},
             {"provider": "istio", "command": "istioctl proxy-config cluster <pod>", "description": "Istio service mesh mTLS"},
             {"provider": "aws", "command": "aws appmesh describe-virtual-service --mesh-name <mesh> --virtual-service-name <svc>", "description": "App Mesh TLS configuration"},
+            {"provider": "azure", "command": "az aks show --resource-group <rg> --name <cluster> --query 'serviceMeshProfile'", "description": "Azure AKS service mesh profile"},
+            {"provider": "azure", "command": "az network application-gateway ssl-policy show --gateway-name <gw> --resource-group <rg>", "description": "Azure Application Gateway SSL/TLS policy"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.ServiceFabric/clusters/{cluster}?api-version=2023-11-01-preview", "description": "Azure Service Fabric cluster security settings"},
             {"provider": "kubernetes", "command": "kubectl get peerauthentication --all-namespaces -o json", "description": "Istio PeerAuthentication policies"},
             {"provider": "linkerd", "command": "linkerd viz stat deploy -n <namespace>", "description": "Linkerd mTLS status"}
           ]
@@ -1833,6 +2005,8 @@
           "tip": "Periodically verify no plaintext internal traffic. Network captures should show only encrypted payloads between services.",
           "sources": [
             {"provider": "gcp", "command": "gcloud compute packet-mirrorings list", "description": "GCP packet mirroring for traffic analysis"},
+            {"provider": "azure", "command": "az network watcher packet-capture list --query '[].{name:name,target:target}'", "description": "Azure Network Watcher packet capture"},
+            {"provider": "azure", "command": "az network watcher flow-log list --location <location> --query '[].{name:name,enabled:enabled}'", "description": "Azure NSG flow logs for traffic analysis"},
             {"provider": "istio", "command": "istioctl analyze --all-namespaces", "description": "Istio configuration analysis for mTLS gaps"}
           ]
         }
@@ -1849,6 +2023,9 @@
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.methodName:(\"storage.objects.delete\" OR \"bigquery.tables.delete\")' --format=json", "description": "GCP data deletion audit logs"},
             {"provider": "gcp", "command": "gcloud kms keys versions destroy <version> --key=<key> --keyring=<ring> --location=<location>", "description": "GCP crypto-shredding via key destruction"},
             {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteObject", "description": "S3 deletion events"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?contains(operationName.value, `delete`)].{time:eventTimestamp,resource:resourceId,operation:operationName.localizedValue}'", "description": "Azure data deletion audit logs"},
+            {"provider": "azure", "command": "az keyvault key delete --vault-name <vault> --name <key>", "description": "Azure Key Vault key deletion (crypto-shredding)"},
+            {"provider": "azure", "command": "az storage blob delete-batch --source <container> --account-name <account> --dryrun", "description": "Azure blob deletion (dry run for verification)"},
             {"provider": "manual", "artifact": "Data destruction certificates"},
             {"provider": "manual", "artifact": "Customer data deletion request logs"}
           ]
@@ -1874,6 +2051,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud services list --enabled --format='table(config.name,config.title)'", "description": "GCP enabled APIs (third-party integrations)"},
             {"provider": "gcp", "command": "gcloud iam service-accounts list --filter='email:*gserviceaccount.com' --format='table(email,displayName)'", "description": "GCP service accounts (potential third-party access)"},
+            {"provider": "aws", "command": "aws iam list-open-id-connect-providers", "description": "AWS OIDC providers (third-party identity federation)"},
+            {"provider": "aws", "command": "aws lambda list-functions --query 'Functions[].{name:FunctionName,runtime:Runtime}'", "description": "AWS Lambda functions (potential third-party integrations)"},
+            {"provider": "azure", "command": "az ad app list --filter=\"publisherDomain ne 'your-tenant.onmicrosoft.com'\" --query '[].{name:displayName,id:appId}'", "description": "Azure third-party app registrations"},
+            {"provider": "azure", "command": "az provider list --query '[?registrationState==`Registered`].{namespace:namespace}'", "description": "Azure registered resource providers"},
             {"provider": "manual", "artifact": "Third-party vendor inventory"},
             {"provider": "manual", "artifact": "Vendor risk assessments"},
             {"provider": "saasops", "api": "/api/v1/applications", "description": "SaaS management platform inventory"}
@@ -1912,7 +2093,9 @@
           "tip": "Monitor all third-party access activity. Alert on unusual patterns or access outside expected hours. Track data accessed by each vendor.",
           "sources": [
             {"provider": "gcp", "command": "gcloud logging read 'protoPayload.authenticationInfo.principalEmail:*gserviceaccount.com' --format=json", "description": "GCP service account activity logs"},
-            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=<third-party-role>", "description": "AWS third-party role activity"}
+            {"provider": "aws", "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=<third-party-role>", "description": "AWS third-party role activity"},
+            {"provider": "azure", "command": "az monitor activity-log list --query '[?authorization.scope contains `Microsoft.Authorization`].{time:eventTimestamp,caller:caller,action:authorization.action}'", "description": "Azure third-party access audit"},
+            {"provider": "azure", "command": "az ad audit sign-in list --filter=\"appDisplayName ne 'Internal App'\" --query '[].{user:userPrincipalName,app:appDisplayName,time:createdDateTime}'", "description": "Azure AD third-party app sign-ins"}
           ]
         }
       ]
@@ -1926,6 +2109,9 @@
           "tip": "Assess vendors based on data sensitivity and criticality. Critical vendors need annual security reviews. Use standardized questionnaires (SIG, CAIQ) for consistency.",
           "sources": [
             {"provider": "gcp", "api": "assuredworkloads.googleapis.com/v1/organizations/{org}/locations/{location}/workloads", "description": "GCP Assured Workloads compliance status"},
+            {"provider": "aws", "command": "aws artifact list-reports --query 'reports[?category==`COMPLIANCE_REPORTS`]'", "description": "AWS Artifact compliance reports"},
+            {"provider": "azure", "command": "az security regulatory-compliance-standards list --query '[].{name:name,state:state}'", "description": "Azure regulatory compliance standards"},
+            {"provider": "azure", "api": "management.azure.com/providers/Microsoft.Security/regulatoryComplianceStandards?api-version=2019-01-01-preview", "description": "Azure compliance standards API"},
             {"provider": "securityscorecard", "api": "/portfolios/{id}/companies", "description": "SecurityScorecard vendor ratings"},
             {"provider": "bitsight", "api": "/ratings/v1/companies", "description": "BitSight vendor ratings"},
             {"provider": "manual", "artifact": "Vendor security questionnaire responses"},
@@ -1953,6 +2139,10 @@
           "sources": [
             {"provider": "gcp", "command": "gcloud artifacts docker images list <repo> --include-tags --show-occurrences", "description": "GCP Artifact Registry vulnerability occurrences"},
             {"provider": "gcp", "api": "containeranalysis.googleapis.com/v1/projects/{project}/occurrences?filter=kind=\"PACKAGE_VULNERABILITY\"", "description": "GCP Container Analysis vulnerabilities"},
+            {"provider": "aws", "command": "aws ecr describe-image-scan-findings --repository-name <repo> --image-id imageTag=<tag>", "description": "AWS ECR image scan findings"},
+            {"provider": "aws", "command": "aws inspector2 list-findings --filter-criteria '{\"findingType\":[{\"comparison\":\"EQUALS\",\"value\":\"PACKAGE_VULNERABILITY\"}]}'", "description": "AWS Inspector package vulnerabilities"},
+            {"provider": "azure", "command": "az acr task list --registry <registry> --query '[?name contains `scan`]'", "description": "Azure ACR vulnerability scan tasks"},
+            {"provider": "azure", "command": "az security sub-assessment list --assessed-resource-id <registry-id> --query '[].{name:displayName,severity:status.severity}'", "description": "Azure container vulnerability assessments"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/dependabot/alerts", "description": "Dependabot alerts"},
             {"provider": "snyk", "api": "/org/{orgId}/projects", "description": "Snyk project vulnerabilities"},
             {"provider": "dependencycheck", "command": "dependency-check --scan . --format JSON", "description": "OWASP Dependency-Check scan"},
@@ -1965,6 +2155,9 @@
           "tip": "Generate SBOM for every release. Include all direct and transitive dependencies. Store SBOMs for incident response and vulnerability triage.",
           "sources": [
             {"provider": "gcp", "command": "gcloud artifacts sbom export --uri=<image>", "description": "GCP Artifact Registry SBOM export"},
+            {"provider": "aws", "command": "aws inspector2 list-findings --filter-criteria '{\"findingType\":[{\"comparison\":\"EQUALS\",\"value\":\"SBOM\"}]}'", "description": "AWS Inspector SBOM findings"},
+            {"provider": "azure", "command": "az acr manifest list-metadata --registry <registry> --name <repo> --query '[].{digest:digest,tags:tags}'", "description": "Azure ACR image manifest metadata"},
+            {"provider": "azure", "api": "management.azure.com/subscriptions/{sub}/providers/Microsoft.Security/softwareInventories?api-version=2021-05-01-preview", "description": "Azure Defender for Cloud software inventory"},
             {"provider": "cyclonedx", "command": "cyclonedx-cli analyze --input-file <manifest>", "description": "CycloneDX SBOM"},
             {"provider": "github", "api": "/repos/{owner}/{repo}/dependency-graph/sbom", "description": "GitHub SBOM export"}
           ]
