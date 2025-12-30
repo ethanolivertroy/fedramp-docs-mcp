@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-12-30
+
+### Added
+
+- **Okta/Duo phishing-resistant MFA evidence sources** for KSI-IAM-01
+  - 3 new Okta WebAuthn/FIDO2 specific APIs (`/api/v1/users/{userId}/factors`, `/api/v1/authenticators`, `/api/v1/policies`)
+  - 5 new Duo WebAuthn/Passkey sources (`/admin/v1/webauthncredentials`, `/admin/v1/policies`, `/admin/v1/users/{user_id}/webauthncredentials`, `/admin/v2/logs/authentication`)
+  - Documentation URLs added to all new sources
+  - Total: 8 new automation sources for phishing-resistant MFA compliance
+
+### Enhanced
+
+- **`health_check` tool** now returns repository version info and auto-update status
+  - New `repoInfo` field with `commitHash`, `commitDate`, and `lastFetchedAt`
+  - New `autoUpdate` field with `enabled` status and `checkIntervalHours` interval
+  - Users can now verify they have the latest FedRAMP docs at a glance
+
+### Fixed
+
+- README configuration example completeness (Custom Update Frequency section)
+- Plugin command documentation with enhanced `health_check` output examples
+
 ## [0.2.0] - 2025-12-28
 
 ### Added
