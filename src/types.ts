@@ -147,6 +147,7 @@ export interface EvidenceSource {
   description?: string;
   field?: string;
   service?: string;
+  docsUrl?: string;
 }
 
 export interface EvidenceItem {
