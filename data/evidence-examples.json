@@ -2181,6 +2181,24 @@
               "docsUrl": "https://developer.okta.com/docs/reference/api/"
             },
             {
+              "provider": "okta",
+              "api": "/api/v1/users/{userId}/factors?filter=factorType eq \"webauthn\"",
+              "description": "Okta WebAuthn factors - verify FIDO2 enrollment",
+              "docsUrl": "https://developer.okta.com/docs/reference/api/factors/#list-factors"
+            },
+            {
+              "provider": "okta",
+              "api": "/api/v1/authenticators?type=security_key",
+              "description": "Okta security key authenticators",
+              "docsUrl": "https://developer.okta.com/docs/reference/api/authenticators-admin/"
+            },
+            {
+              "provider": "okta",
+              "api": "/api/v1/policies?type=ACCESS_POLICY",
+              "description": "Okta access policies - check phishing-resistant requirement",
+              "docsUrl": "https://developer.okta.com/docs/reference/api/policy/"
+            },
+            {
               "provider": "azure",
               "api": "/v1.0/policies/authenticationStrengthPolicies",
               "description": "Entra ID authentication strength - look for 'phishingResistant' strength"
@@ -2216,7 +2234,26 @@
             {
               "provider": "duo",
               "api": "/admin/v1/users",
-              "description": "Duo Admin API - user enrollment and auth methods"
+              "description": "Duo Admin API - user enrollment and auth methods",
+              "docsUrl": "https://duo.com/docs/adminapi#retrieve-users"
+            },
+            {
+              "provider": "duo",
+              "api": "/admin/v1/webauthncredentials",
+              "description": "Duo WebAuthn credentials inventory",
+              "docsUrl": "https://duo.com/docs/adminapi#webauthn-credentials"
+            },
+            {
+              "provider": "duo",
+              "api": "/admin/v1/policies",
+              "description": "Duo policies - verify phishing-resistant auth requirement",
+              "docsUrl": "https://duo.com/docs/adminapi#policies"
+            },
+            {
+              "provider": "duo",
+              "api": "/admin/v1/users/{user_id}/webauthncredentials",
+              "description": "Duo user WebAuthn enrollments",
+              "docsUrl": "https://duo.com/docs/adminapi#retrieve-webauthn-credentials-by-user-id"
             },
             {
               "provider": "oracle",
@@ -2301,6 +2338,12 @@
               "command": "oci iam user list --compartment-id <tenancy-ocid>",
               "description": "OCI IAM user list",
               "docsUrl": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/iam/user/list.html"
+            },
+            {
+              "provider": "duo",
+              "api": "/admin/v2/logs/authentication",
+              "description": "Duo auth logs - filter by factor type for WebAuthn usage",
+              "docsUrl": "https://duo.com/docs/adminapi#authentication-logs"
             }
           ]
         }
