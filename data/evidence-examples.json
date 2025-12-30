@@ -277,6 +277,30 @@
               "provider": "snyk",
               "api": "/org/{orgId}/projects",
               "description": "Snyk vulnerability findings across projects"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.prismacloud.io/v2/alert",
+              "description": "Prisma Cloud alerts",
+              "docsUrl": "https://pan.dev/prisma-cloud/api/cspm/get-alerts-v2/"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "security.microsoft.com/api/alerts",
+              "description": "Microsoft Defender alerts",
+              "docsUrl": "https://learn.microsoft.com/en-us/microsoft-365/security/defender/api-list-alerts"
+            },
+            {
+              "provider": "sumologic",
+              "api": "/api/sec/v1/threat-intel-sources",
+              "description": "Sumo Logic Cloud SIEM",
+              "docsUrl": "https://help.sumologic.com/docs/cse/"
+            },
+            {
+              "provider": "crowdstrike",
+              "api": "/detects/queries/detects/v1",
+              "description": "CrowdStrike Falcon detections",
+              "docsUrl": "https://falcon.crowdstrike.com/documentation/85/detection-and-prevention-policies-apis"
             }
           ]
         },
@@ -304,6 +328,12 @@
               "provider": "defectdojo",
               "api": "/api/v2/findings/?active=true",
               "description": "DefectDojo active findings with SLA tracking"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.prismacloud.io/v2/alert",
+              "description": "Prisma Cloud alerts",
+              "docsUrl": "https://pan.dev/prisma-cloud/api/cspm/get-alerts-v2/"
             }
           ]
         },
@@ -333,6 +363,12 @@
               "provider": "tenable",
               "api": "/workbenches/vulnerabilities",
               "description": "Tenable.io vulnerability workbench"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.prismacloud.io/v2/alert",
+              "description": "Prisma Cloud alerts",
+              "docsUrl": "https://pan.dev/prisma-cloud/api/cspm/get-alerts-v2/"
             }
           ]
         },
@@ -363,6 +399,12 @@
               "provider": "snyk",
               "api": "/org/{orgId}/settings",
               "description": "Snyk organization scanning settings"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.prismacloud.io/v2/alert",
+              "description": "Prisma Cloud alerts",
+              "docsUrl": "https://pan.dev/prisma-cloud/api/cspm/get-alerts-v2/"
             }
           ]
         }
@@ -1477,6 +1519,12 @@
               "provider": "kubernetes",
               "command": "kubectl get networkpolicies --all-namespaces -o yaml",
               "description": "Kubernetes NetworkPolicies"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.xdr.paloaltonetworks.com/public_api/v1/endpoints/get_endpoints",
+              "description": "Cortex XDR endpoints",
+              "docsUrl": "https://cortex-xdr.pan.dev/docs/endpoint-management/get-endpoints/"
             }
           ]
         },
@@ -1512,6 +1560,12 @@
               "provider": "shodan",
               "api": "/shodan/host/{ip}",
               "description": "External view of exposed services"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.xdr.paloaltonetworks.com/public_api/v1/endpoints/get_endpoints",
+              "description": "Cortex XDR endpoints",
+              "docsUrl": "https://cortex-xdr.pan.dev/docs/endpoint-management/get-endpoints/"
             }
           ]
         },
@@ -1541,6 +1595,12 @@
             {
               "provider": "manual",
               "artifact": "Network architecture diagram showing security zones and trust boundaries"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.xdr.paloaltonetworks.com/public_api/v1/endpoints/get_endpoints",
+              "description": "Cortex XDR endpoints",
+              "docsUrl": "https://cortex-xdr.pan.dev/docs/endpoint-management/get-endpoints/"
             }
           ]
         }
@@ -1591,6 +1651,12 @@
               "provider": "nuclei",
               "command": "nuclei -l urls.txt -t cves/",
               "description": "Nuclei vulnerability scanning"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.xdr.paloaltonetworks.com/public_api/v1/incidents/get_incidents",
+              "description": "Cortex XDR incidents",
+              "docsUrl": "https://cortex-xdr.pan.dev/docs/incident-management/get-incidents/"
             }
           ]
         },
@@ -1616,6 +1682,12 @@
               "command": "az network public-ip list --query '[].{name:name,ip:ipAddress,resource:id}'",
               "description": "Azure public IP inventory",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/network"
+            },
+            {
+              "provider": "paloalto",
+              "api": "api.xdr.paloaltonetworks.com/public_api/v1/incidents/get_incidents",
+              "description": "Cortex XDR incidents",
+              "docsUrl": "https://cortex-xdr.pan.dev/docs/incident-management/get-incidents/"
             }
           ]
         }
@@ -1656,6 +1728,12 @@
             {
               "provider": "manual",
               "artifact": "Network segmentation diagrams"
+            },
+            {
+              "provider": "crowdstrike",
+              "api": "/scanner/queries/scans/v1",
+              "description": "CrowdStrike vulnerability scans",
+              "docsUrl": "https://falcon.crowdstrike.com/documentation/98/spotlight-apis"
             }
           ]
         },
@@ -1685,6 +1763,12 @@
               "provider": "calico",
               "command": "calicoctl get globalnetworkpolicies -o yaml",
               "description": "Calico network policies"
+            },
+            {
+              "provider": "crowdstrike",
+              "api": "/scanner/queries/scans/v1",
+              "description": "CrowdStrike vulnerability scans",
+              "docsUrl": "https://falcon.crowdstrike.com/documentation/98/spotlight-apis"
             }
           ]
         }
@@ -2133,6 +2217,12 @@
               "provider": "duo",
               "api": "/admin/v1/users",
               "description": "Duo Admin API - user enrollment and auth methods"
+            },
+            {
+              "provider": "oracle",
+              "command": "oci iam user list --compartment-id <tenancy-ocid>",
+              "description": "OCI IAM user list",
+              "docsUrl": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/iam/user/list.html"
             }
           ]
         },
@@ -2169,6 +2259,12 @@
               "provider": "crowdstrike",
               "api": "/identity-protection/entities/users/v1",
               "description": "CrowdStrike Identity - MFA status across IdPs"
+            },
+            {
+              "provider": "oracle",
+              "command": "oci iam user list --compartment-id <tenancy-ocid>",
+              "description": "OCI IAM user list",
+              "docsUrl": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/iam/user/list.html"
             }
           ]
         },
@@ -2199,6 +2295,12 @@
               "command": "gcloud logging read 'protoPayload.methodName=\"google.login.LoginService.loginSuccess\"' --format=json",
               "description": "GCP login audit logs",
               "docsUrl": "https://cloud.google.com/sdk/gcloud/reference/logging/read"
+            },
+            {
+              "provider": "oracle",
+              "command": "oci iam user list --compartment-id <tenancy-ocid>",
+              "description": "OCI IAM user list",
+              "docsUrl": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/iam/user/list.html"
             }
           ]
         }
@@ -2248,6 +2350,12 @@
               "provider": "salesforce",
               "api": "/services/data/v59.0/tooling/query?q=SELECT+Id,DeveloperName+FROM+SessionSettings",
               "description": "Salesforce session security settings"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/people",
+              "description": "Webex user management",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/people"
             }
           ]
         },
@@ -2266,6 +2374,12 @@
               "api": "/api/v1/org/factors/catalog",
               "description": "Okta factor enrollment statistics",
               "docsUrl": "https://developer.okta.com/docs/reference/api/factors/"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/people",
+              "description": "Webex user management",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/people"
             }
           ]
         }
@@ -2307,6 +2421,12 @@
               "provider": "kubernetes",
               "command": "kubectl get serviceaccounts --all-namespaces -o json",
               "description": "Kubernetes service accounts"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "graph.microsoft.com/v1.0/directoryRoles",
+              "description": "Microsoft 365 directory roles",
+              "docsUrl": "https://learn.microsoft.com/en-us/graph/api/directoryrole-list"
             }
           ]
         },
@@ -2326,6 +2446,12 @@
               "command": "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateAccessKey",
               "description": "AWS access key creation events",
               "docsUrl": "https://docs.aws.amazon.com/cli/latest/reference/cloudtrail/lookup-events.html"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "graph.microsoft.com/v1.0/directoryRoles",
+              "description": "Microsoft 365 directory roles",
+              "docsUrl": "https://learn.microsoft.com/en-us/graph/api/directoryrole-list"
             }
           ]
         },
@@ -2351,6 +2477,18 @@
               "command": "aws iam list-open-id-connect-providers",
               "description": "AWS OIDC providers for workload identity",
               "docsUrl": "https://docs.aws.amazon.com/cli/latest/reference/iam/list-open-id-connect-providers.html"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "graph.microsoft.com/v1.0/directoryRoles",
+              "description": "Microsoft 365 directory roles",
+              "docsUrl": "https://learn.microsoft.com/en-us/graph/api/directoryrole-list"
+            },
+            {
+              "provider": "google-workspace",
+              "api": "admin.googleapis.com/admin/directory/v1/customer/{customerId}/roles",
+              "description": "Google Workspace admin roles",
+              "docsUrl": "https://developers.google.com/admin-sdk/directory/reference/rest/v1/roles"
             }
           ]
         }
@@ -2951,6 +3089,12 @@
               "provider": "zscaler",
               "api": "/adminAuditLogs",
               "description": "Zscaler admin audit logs"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/admin/events",
+              "description": "Webex admin audit events",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/admin-audit-events"
             }
           ]
         },
@@ -2985,6 +3129,12 @@
             {
               "provider": "manual",
               "artifact": "Log source matrix mapping systems to SIEM data sources"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/admin/events",
+              "description": "Webex admin audit events",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/admin-audit-events"
             }
           ]
         },
@@ -3017,6 +3167,54 @@
               "provider": "newrelic",
               "api": "/v2/alerts_policies.json",
               "description": "New Relic alert policies"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/admin/events",
+              "description": "Webex admin audit events",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/admin-audit-events"
+            },
+            {
+              "provider": "google-workspace",
+              "api": "admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin",
+              "description": "Google Workspace admin audit logs",
+              "docsUrl": "https://developers.google.com/admin-sdk/reports/reference/rest"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "graph.microsoft.com/v1.0/auditLogs/directoryAudits",
+              "description": "Microsoft 365 directory audit logs",
+              "docsUrl": "https://learn.microsoft.com/en-us/graph/api/directoryaudit-list"
+            },
+            {
+              "provider": "sumologic",
+              "api": "/api/v1/logs/search",
+              "description": "Sumo Logic log search",
+              "docsUrl": "https://help.sumologic.com/docs/api/search-job/"
+            },
+            {
+              "provider": "zoom",
+              "api": "api.zoom.us/v2/report/operationlogs",
+              "description": "Zoom operation logs",
+              "docsUrl": "https://developers.zoom.us/docs/api/rest/reference/report/methods/"
+            },
+            {
+              "provider": "box",
+              "api": "api.box.com/2.0/events?stream_type=admin_logs",
+              "description": "Box admin audit logs",
+              "docsUrl": "https://developer.box.com/guides/events/enterprise-events/"
+            },
+            {
+              "provider": "docusign",
+              "api": "monitor.docusign.com/api/v2/datasets/monitor/stream",
+              "description": "DocuSign Monitor audit events",
+              "docsUrl": "https://developers.docusign.com/docs/monitor-api/"
+            },
+            {
+              "provider": "oracle",
+              "command": "oci audit event list --compartment-id <compartment-ocid>",
+              "description": "OCI audit events",
+              "docsUrl": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/audit/event/list.html"
             }
           ]
         }
@@ -3056,6 +3254,12 @@
               "command": "az monitor log-analytics query -w <workspace-id> --analytics-query <query>",
               "description": "Log Analytics query results",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/monitor"
+            },
+            {
+              "provider": "sumologic",
+              "api": "/api/v1/dashboards",
+              "description": "Sumo Logic dashboards",
+              "docsUrl": "https://help.sumologic.com/docs/api/dashboard/"
             }
           ]
         },
@@ -3075,6 +3279,24 @@
               "command": "gcloud organizations get-iam-policy <org> --format=json | jq '.auditConfigs'",
               "description": "GCP org-level audit config",
               "docsUrl": "https://cloud.google.com/sdk/gcloud/reference/organizations/get-iam-policy"
+            },
+            {
+              "provider": "sumologic",
+              "api": "/api/v1/dashboards",
+              "description": "Sumo Logic dashboards",
+              "docsUrl": "https://help.sumologic.com/docs/api/dashboard/"
+            },
+            {
+              "provider": "google-workspace",
+              "api": "vault.googleapis.com/v1/matters",
+              "description": "Google Vault eDiscovery matters",
+              "docsUrl": "https://developers.google.com/vault/reference/rest"
+            },
+            {
+              "provider": "microsoft365",
+              "api": "graph.microsoft.com/v1.0/security/alerts_v2",
+              "description": "Microsoft 365 security alerts",
+              "docsUrl": "https://learn.microsoft.com/en-us/graph/api/security-list-alerts_v2"
             }
           ]
         }
@@ -4720,6 +4942,12 @@
               "command": "az storage account show --name <account> --query 'encryption'",
               "description": "Azure storage encryption",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/storage"
+            },
+            {
+              "provider": "veracode",
+              "api": "api.veracode.com/appsec/v1/applications",
+              "description": "Veracode application inventory",
+              "docsUrl": "https://docs.veracode.com/r/c_apps_intro"
             }
           ]
         },
@@ -4739,6 +4967,12 @@
               "command": "aws resourcegroupstaggingapi get-resources --tag-filters Key=DataClassification",
               "description": "AWS tagged data resources",
               "docsUrl": "https://docs.aws.amazon.com/cli/latest/reference/resourcegroupstaggingapi/get-resources.html"
+            },
+            {
+              "provider": "veracode",
+              "api": "api.veracode.com/appsec/v1/applications",
+              "description": "Veracode application inventory",
+              "docsUrl": "https://docs.veracode.com/r/c_apps_intro"
             }
           ]
         }
@@ -4986,6 +5220,12 @@
               "provider": "cyberark",
               "api": "/PasswordVault/api/Safes/<safe>/Members",
               "description": "CyberArk safe membership and permissions"
+            },
+            {
+              "provider": "veracode",
+              "api": "analysiscenter.veracode.com/api/5.0/getbuildinfo.do",
+              "description": "Veracode scan build info",
+              "docsUrl": "https://docs.veracode.com/r/c_build_intro"
             }
           ]
         },
@@ -5016,6 +5256,12 @@
               "command": "az monitor activity-log list --resource-group <rg> --resource-type Microsoft.KeyVault/vaults --query '[].{time:eventTimestamp,operation:operationName.localizedValue,status:status.localizedValue}'",
               "description": "Key Vault activity logs",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/monitor"
+            },
+            {
+              "provider": "veracode",
+              "api": "analysiscenter.veracode.com/api/5.0/getbuildinfo.do",
+              "description": "Veracode scan build info",
+              "docsUrl": "https://docs.veracode.com/r/c_build_intro"
             }
           ]
         },
@@ -5046,6 +5292,12 @@
               "provider": "hashicorp",
               "api": "/v1/secret/metadata?list=true",
               "description": "Vault secrets list with metadata"
+            },
+            {
+              "provider": "veracode",
+              "api": "analysiscenter.veracode.com/api/5.0/getbuildinfo.do",
+              "description": "Veracode scan build info",
+              "docsUrl": "https://docs.veracode.com/r/c_build_intro"
             }
           ]
         },
@@ -5073,6 +5325,12 @@
               "provider": "trufflehog",
               "command": "trufflehog git file://<repo> --json",
               "description": "TruffleHog secret scanning"
+            },
+            {
+              "provider": "veracode",
+              "api": "analysiscenter.veracode.com/api/5.0/getbuildinfo.do",
+              "description": "Veracode scan build info",
+              "docsUrl": "https://docs.veracode.com/r/c_build_intro"
             }
           ]
         }
@@ -5291,6 +5549,12 @@
               "provider": "zscaler",
               "api": "/sslInspectionRules",
               "description": "Zscaler SSL inspection policies"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/organizations/{orgId}/security",
+              "description": "Webex security settings",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/organization-settings"
             }
           ]
         },
@@ -5321,6 +5585,12 @@
               "provider": "istio",
               "command": "istioctl analyze --all-namespaces",
               "description": "Istio configuration analysis for mTLS gaps"
+            },
+            {
+              "provider": "webex",
+              "api": "webexapis.com/v1/organizations/{orgId}/security",
+              "description": "Webex security settings",
+              "docsUrl": "https://developer.webex.com/docs/api/v1/organization-settings"
             }
           ]
         }
@@ -5514,6 +5784,12 @@
               "command": "az ad sp list --filter=\"servicePrincipalType eq 'Application'\" --query '[].{name:displayName,id:appId}'",
               "description": "Azure third-party service principals",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/ad"
+            },
+            {
+              "provider": "box",
+              "api": "api.box.com/2.0/collaborations",
+              "description": "Box external collaborations",
+              "docsUrl": "https://developer.box.com/reference/get-collaborations/"
             }
           ]
         },
@@ -5545,6 +5821,12 @@
               "command": "az ad audit sign-in list --filter=\"appDisplayName ne 'Internal App'\" --query '[].{user:userPrincipalName,app:appDisplayName,time:createdDateTime}'",
               "description": "Azure AD third-party app sign-ins",
               "docsUrl": "https://learn.microsoft.com/en-us/cli/azure/ad"
+            },
+            {
+              "provider": "box",
+              "api": "api.box.com/2.0/collaborations",
+              "description": "Box external collaborations",
+              "docsUrl": "https://developer.box.com/reference/get-collaborations/"
             }
           ]
         }
