@@ -24,7 +24,7 @@ import { searchMarkdown } from "../search.js";
 
 import { searchDefinitionsTool } from "./search_definitions.js";
 import { filterByImpactTool } from "./filter_by_impact.js";
-import { getEvidenceChecklistTool } from "./get_evidence_checklist.js";
+import { getEvidenceExamplesTool } from "./get_evidence_examples.js";
 import { analyzeControlCoverageTool } from "./analyze_control_coverage.js";
 import { getControlRequirementsTool } from "./get_control_requirements.js";
 import { getThemeSummaryTool } from "./get_theme_summary.js";
@@ -193,14 +193,14 @@ describe("filter_by_impact", () => {
   });
 });
 
-describe("get_evidence_checklist", () => {
+describe("get_evidence_examples", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getKsiItems).mockReturnValue(mockKsiItems);
   });
 
   it("should return all KSI items with disclaimer", async () => {
-    const result = await getEvidenceChecklistTool.execute({ includeRetired: true });
+    const result = await getEvidenceExamplesTool.execute({ includeRetired: true });
 
     expect(result.total).toBe(3);
     expect(result.disclaimer).toContain("community suggestions");
@@ -208,21 +208,21 @@ describe("get_evidence_checklist", () => {
   });
 
   it("should filter by theme", async () => {
-    const result = await getEvidenceChecklistTool.execute({ theme: "IAM", includeRetired: true });
+    const result = await getEvidenceExamplesTool.execute({ theme: "IAM", includeRetired: true });
 
     expect(result.total).toBe(2);
     expect(result.items.every((i) => i.theme === "IAM")).toBe(true);
   });
 
   it("should filter by specific ID", async () => {
-    const result = await getEvidenceChecklistTool.execute({ id: "KSI-CNA-01", includeRetired: true });
+    const result = await getEvidenceExamplesTool.execute({ id: "KSI-CNA-01", includeRetired: true });
 
     expect(result.total).toBe(1);
     expect(result.items[0].ksiId).toBe("KSI-CNA-01");
   });
 
   it("should include themes list", async () => {
-    const result = await getEvidenceChecklistTool.execute({ includeRetired: true });
+    const result = await getEvidenceExamplesTool.execute({ includeRetired: true });
 
     expect(result.themes).toContain("IAM");
     expect(result.themes).toContain("CNA");

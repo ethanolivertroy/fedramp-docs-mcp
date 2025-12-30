@@ -4,7 +4,7 @@ import { analyzeControlCoverageTool } from "./analyze_control_coverage.js";
 import { diffFrmrTool } from "./diff_frmr.js";
 import { filterByImpactTool } from "./filter_by_impact.js";
 import { getControlRequirementsTool } from "./get_control_requirements.js";
-import { getEvidenceChecklistTool } from "./get_evidence_checklist.js";
+import { getEvidenceExamplesTool } from "./get_evidence_examples.js";
 import { getFrmrDocumentTool } from "./get_frmr_document.js";
 import { getKsiTool } from "./get_ksi.js";
 import { getRequirementByIdTool } from "./get_requirement_by_id.js";
@@ -32,7 +32,7 @@ export function registerTools(server: McpServer): void {
     getKsiTool,
     filterByImpactTool,
     getThemeSummaryTool,
-    getEvidenceChecklistTool,
+    getEvidenceExamplesTool,
     // Control mapping tools
     listControlsTool,
     getControlRequirementsTool,

@@ -9,7 +9,7 @@ import type { ToolDefinition } from "./base.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-interface EvidenceChecklistItem {
+interface EvidenceExampleItem {
   ksiId: string;
   ksiName: string;
   ksiStatement?: string;
@@ -19,10 +19,10 @@ interface EvidenceChecklistItem {
   retired?: KsiRetiredInfo;
 }
 
-interface EvidenceChecklistResult {
+interface EvidenceExamplesResult {
   disclaimer: string;
   total: number;
-  items: EvidenceChecklistItem[];
+  items: EvidenceExampleItem[];
   themes: string[];
 }
 
@@ -52,11 +52,11 @@ const schema = z.object({
     .describe("Include retired KSIs in results (default: true for backwards compatibility)"),
 });
 
-export const getEvidenceChecklistTool: ToolDefinition<
+export const getEvidenceExamplesTool: ToolDefinition<
   typeof schema,
-  EvidenceChecklistResult
+  EvidenceExamplesResult
 > = {
-  name: "get_evidence_checklist",
+  name: "get_evidence_examples",
   description:
     "Get suggested evidence examples for KSI compliance. Returns automation-friendly evidence collection sources (APIs, CLI commands, artifacts) for each KSI. NOTE: These are community suggestions, not official FedRAMP guidance.",
   schema,
@@ -82,8 +82,8 @@ export const getEvidenceChecklistTool: ToolDefinition<
       filtered = filtered.filter((item) => item.id.toUpperCase() === idUpper);
     }
 
-    // Build checklist items with evidence examples
-    let items: EvidenceChecklistItem[] = filtered.map((ksi) => {
+    // Build example items with evidence examples
+    let items: EvidenceExampleItem[] = filtered.map((ksi) => {
       // Get evidence examples for this KSI from our data file
       const evidenceExample = evidenceData?.examples[ksi.id];
 

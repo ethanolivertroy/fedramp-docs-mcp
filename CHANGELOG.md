@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **7 new MCP tools** for compliance workflows:
   - `search_definitions` - Search FedRAMP definitions (FRD) by term
   - `filter_by_impact` - Filter KSI items by impact level (low/moderate/high)
-  - `get_evidence_checklist` - Collect evidence examples for compliance
+  - `get_evidence_examples` - Collect evidence examples for compliance
   - `analyze_control_coverage` - Report NIST control family coverage
   - `get_control_requirements` - Get all requirements for a NIST control
   - `get_theme_summary` - Get comprehensive guidance for a KSI theme

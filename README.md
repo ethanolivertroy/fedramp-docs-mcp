@@ -164,7 +164,7 @@ The server provides 20 tools organized into categories. All tools follow the err
 | `get_ksi` | Get a specific KSI item by ID |
 | `filter_by_impact` | Filter KSI items by impact level (low/moderate/high) |
 | `get_theme_summary` | Get comprehensive guidance for a KSI theme (IAM, CNA, etc.) |
-| `get_evidence_checklist` | Get automation-friendly evidence suggestions for KSI compliance (community suggestions, not official FedRAMP) |
+| `get_evidence_examples` | Get automation-friendly evidence suggestions for KSI compliance (community suggestions, not official FedRAMP) |
 
 ### Control Mapping
 | Tool | Description |
@@ -196,7 +196,7 @@ The server provides 20 tools organized into categories. All tools follow the err
 
 ## Evidence Collection Suggestions
 
-The `get_evidence_checklist` tool provides **community-suggested** evidence examples for each KSI. These are automation-friendly suggestions showing how to programmatically collect compliance evidence via APIs, CLI commands, and security tools.
+The `get_evidence_examples` tool provides **community-suggested** evidence examples for each KSI. These are automation-friendly suggestions showing how to programmatically collect compliance evidence via APIs, CLI commands, and security tools.
 
 **Important:** These are NOT official FedRAMP guidance. Always verify requirements with [official FedRAMP documentation](https://fedramp.gov).
 
@@ -248,7 +248,7 @@ When using the MCP server with Claude Desktop or other MCP clients, here are som
 → Uses get_theme_summary with theme='IAM'
 
 "What evidence do I need for IAM compliance?"
-→ Uses get_evidence_checklist with theme='IAM'
+→ Uses get_evidence_examples with theme='IAM'
 ```
 
 **Searching Documentation:**
