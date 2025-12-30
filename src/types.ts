@@ -131,11 +131,24 @@ export interface VersionInfo {
   path: string;
 }
 
+export interface RepoInfo {
+  commitHash: string;
+  commitDate: string;
+  lastFetchedAt?: string;
+}
+
+export interface AutoUpdateConfig {
+  enabled: boolean;
+  checkIntervalHours: number;
+}
+
 export interface HealthCheckResult {
   ok: boolean;
   indexedFiles: number;
   repoPath: string;
   errors?: string[];
+  repoInfo?: RepoInfo;
+  autoUpdate?: AutoUpdateConfig;
 }
 
 // Evidence Examples Types (community suggestions, not official FedRAMP)

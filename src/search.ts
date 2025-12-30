@@ -8,10 +8,13 @@ import {
   getMarkdownDoc,
   getMarkdownIndex,
 } from "./indexer.js";
+import { getAutoUpdateConfig, getRepoInfo } from "./repo.js";
 import type {
+  AutoUpdateConfig,
   MarkdownDoc,
   MarkdownSearchHit,
   MarkdownSearchResult,
+  RepoInfo,
 } from "./types.js";
 import { clamp, createError, unique } from "./util.js";
 
@@ -236,20 +239,42 @@ export function getSignificantChangeGuidance(
   return { sources };
 }
 
-export function healthCheck(): {
+export async function healthCheck(): Promise<{
   ok: boolean;
   indexedFiles: number;
   repoPath: string;
   errors?: string[];
-} {
+  repoInfo?: RepoInfo;
+  autoUpdate?: AutoUpdateConfig;
+}> {
   const state = getIndexState();
   const indexedFiles =
     state.frmrDocuments.length + state.markdownDocs.size;
   const errors = getIndexErrors();
+
+  // Get repo info (commit hash, date, last fetch time)
+  const repoInfoResult = await getRepoInfo();
+  const repoInfo: RepoInfo | undefined = repoInfoResult
+    ? {
+        commitHash: repoInfoResult.commitHash,
+        commitDate: repoInfoResult.commitDate,
+        lastFetchedAt: repoInfoResult.lastFetchedAt,
+      }
+    : undefined;
+
+  // Get auto-update configuration
+  const autoUpdateConfig = getAutoUpdateConfig();
+  const autoUpdate: AutoUpdateConfig = {
+    enabled: autoUpdateConfig.enabled,
+    checkIntervalHours: autoUpdateConfig.checkIntervalHours,
+  };
+
   return {
     ok: errors.length === 0,
     indexedFiles,
     repoPath: state.repoPath,
     errors: errors.length ? errors : undefined,
+    repoInfo,
+    autoUpdate,
   };
 }

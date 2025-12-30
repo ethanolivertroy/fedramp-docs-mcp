@@ -184,3 +184,55 @@ export function getRepoPath(): string {
 export function resolveRepoPath(relativePath: string): string {
   return path.join(getRepoPath(), relativePath);
 }
+
+export interface RepoInfoResult {
+  commitHash: string;
+  commitDate: string;
+  lastFetchedAt?: string;
+}
+
+export async function getRepoInfo(): Promise<RepoInfoResult | null> {
+  try {
+    const repoPath = getRepoPath();
+    const git = simpleGit(repoPath);
+
+    // Get current commit info
+    const log = await git.log({ maxCount: 1 });
+    if (!log.latest) {
+      return null;
+    }
+
+    const result: RepoInfoResult = {
+      commitHash: log.latest.hash.substring(0, 7),
+      commitDate: log.latest.date,
+    };
+
+    // Get last fetch time from FETCH_HEAD
+    const fetchHeadPath = path.join(repoPath, ".git", "FETCH_HEAD");
+    try {
+      const stats = await fse.stat(fetchHeadPath);
+      result.lastFetchedAt = stats.mtime.toISOString();
+    } catch {
+      // FETCH_HEAD may not exist if never fetched
+    }
+
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export interface AutoUpdateConfigResult {
+  enabled: boolean;
+  checkIntervalHours: number;
+}
+
+export function getAutoUpdateConfig(): AutoUpdateConfigResult {
+  return {
+    enabled: envBoolean("FEDRAMP_DOCS_AUTO_UPDATE", true),
+    checkIntervalHours: parseInt(
+      envString("FEDRAMP_DOCS_UPDATE_CHECK_HOURS", "24") ?? "24",
+      10,
+    ),
+  };
+}

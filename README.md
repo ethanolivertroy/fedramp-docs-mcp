@@ -137,11 +137,16 @@ The server includes automatic update checking to keep the FedRAMP docs current:
 }
 ```
 
-**Custom Update Frequency:**
+**Custom Update Frequency (check every 6 hours):**
 ```json
 {
-  "env": {
-    "FEDRAMP_DOCS_UPDATE_CHECK_HOURS": "6"
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "env": {
+        "FEDRAMP_DOCS_UPDATE_CHECK_HOURS": "6"
+      }
+    }
   }
 }
 ```
