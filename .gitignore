@@ -57,3 +57,4 @@ tests/**/*.d.ts
 
 # Local development
 .local/
+.mcpregistry_*
