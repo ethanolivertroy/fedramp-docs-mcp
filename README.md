@@ -8,7 +8,7 @@ Custom Model Context Protocol (MCP) server that makes the FedRAMP/docs repositor
 
 See the FedRAMP Docs MCP Server in action with Claude Desktop:
 
-https://github.com/user-attachments/assets/6c96ace6-cbd8-4479-9aa9-4474643362c4
+[![FedRAMP Docs MCP Demo](https://img.youtube.com/vi/Zh3516XkQRs/maxresdefault.jpg)](https://youtu.be/Zh3516XkQRs)
 
 ## Prerequisites
 
