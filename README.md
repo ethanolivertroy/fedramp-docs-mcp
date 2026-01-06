@@ -629,11 +629,36 @@ After configuration, restart Goose or reload extensions. You can test by asking:
 
 ### MCP Inspector (Debugging)
 
-For debugging and testing the server directly:
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is an official tool for testing and debugging MCP servers. It provides a visual UI to interactively call tools and explore resources.
 
+**Requirements:** Node.js 22.7.5 or later
+
+**Interactive UI:**
 ```bash
+# Start the inspector with fedramp-docs-mcp
 npx @modelcontextprotocol/inspector node dist/index.js
+
+# Or if installed globally
+npx @modelcontextprotocol/inspector fedramp-docs-mcp
 ```
+
+Open `http://localhost:6274` to access the UI, then test tools like:
+- `health_check` - Verify the server is working
+- `list_frmr_documents` - See all indexed FedRAMP documents
+- `list_ksi` - Browse Key Security Indicators
+
+**CLI Mode (Quick Testing):**
+```bash
+# List all available tools
+npx @modelcontextprotocol/inspector --cli node dist/index.js --method tools/list
+
+# Call a specific tool
+npx @modelcontextprotocol/inspector --cli node dist/index.js \
+  --method tools/call --tool-name health_check
+```
+
+**Export Configuration:**
+The Inspector UI includes buttons to copy server configurations for Claude Desktop, Cursor, and other MCP clients.
 
 ## Claude Plugin
 
