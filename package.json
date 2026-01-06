@@ -1,6 +1,7 @@
 {
   "name": "fedramp-docs-mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
+  "mcpName": "io.github.ethanolivertroy/fedramp-docs-mcp",
   "description": "Model Context Protocol server for exploring the FedRAMP docs repository.",
   "type": "module",
   "author": "Ethan Troy",
