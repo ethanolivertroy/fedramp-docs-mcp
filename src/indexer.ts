@@ -45,7 +45,11 @@ const INDEX_CACHE_FILE = path.join(
   "index-v1.json",
 );
 
+// Increment when extraction logic changes to force cache rebuild
+const CACHE_VERSION = 1;
+
 interface PersistedIndex {
+  cacheVersion?: number;
   repoHead?: string | null;
   indexedAt: number;
   repoPath: string;
@@ -78,6 +82,12 @@ async function loadPersistedIndex(
     const raw = await fse.readFile(INDEX_CACHE_FILE, "utf8");
     const data = JSON.parse(raw) as PersistedIndex;
 
+    // Check cache version first - force rebuild if extraction code changed
+    if (data.cacheVersion !== CACHE_VERSION) {
+      return null;
+    }
+
+    // Then check if repo data changed
     if (repoHead && data.repoHead && data.repoHead !== repoHead) {
       return null;
     }
@@ -126,6 +136,7 @@ async function persistIndex(
     return;
   }
   const payload: PersistedIndex = {
+    cacheVersion: CACHE_VERSION,
     repoHead,
     indexedAt: state.indexedAt,
     repoPath: state.repoPath,
