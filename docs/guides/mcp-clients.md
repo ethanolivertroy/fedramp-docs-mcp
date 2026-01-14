@@ -105,6 +105,34 @@ If LM Studio supports MCP servers:
 1. Navigate to the MCP/Tools configuration
 2. Add server with command: `npx -y fedramp-docs-mcp`
 
+## Kiro
+
+[Kiro](https://kiro.dev/) is AWS's spec-driven IDE with native MCP support.
+
+1. **Open Kiro MCP settings:**
+   - Global: `~/.kiro/settings/mcp.json`
+   - Project: `.kiro/settings/mcp.json` (takes precedence)
+
+2. **Add the FedRAMP Docs configuration:**
+
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "npx",
+      "args": ["-y", "fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+3. **Save the file** - Kiro automatically loads MCP servers on config change
+
+4. **Test it** - Ask Kiro: "List all FedRAMP FRMR documents"
+
 ## Generic MCP Client Configuration
 
 For any MCP client that supports stdio transport:

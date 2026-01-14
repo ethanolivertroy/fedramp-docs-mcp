@@ -643,6 +643,52 @@ After configuration, restart Goose or reload extensions. You can test by asking:
 
 **Note:** Goose's MCP support is still maturing and may have issues discovering tools from stdio servers. If you experience problems with tool discovery, consider using Claude Desktop, Claude Code CLI, LM Studio, or OpenCode instead.
 
+### Kiro
+
+[Kiro](https://kiro.dev/) is AWS's spec-driven IDE with native MCP support.
+
+#### Setup Instructions
+
+1. **Open Kiro MCP settings:**
+   - Global: `~/.kiro/settings/mcp.json`
+   - Project: `.kiro/settings/mcp.json` (takes precedence)
+
+2. **Add the FedRAMP Docs configuration:**
+
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "npx",
+      "args": ["-y", "fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+**With global installation:**
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "fedramp-docs-mcp",
+      "args": [],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+3. **Save the file** - Kiro automatically loads MCP servers on config change
+4. **Test it** - Ask Kiro: "List all FedRAMP FRMR documents"
+
+**Note:** Requires global installation (`npm install -g fedramp-docs-mcp`) or use npx. Find your path with: `which fedramp-docs-mcp`
+
 ### MCP Inspector (Debugging)
 
 The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is an official tool for testing and debugging MCP servers. It provides a visual UI to interactively call tools and explore resources.
