@@ -10,6 +10,22 @@ See the FedRAMP Docs MCP Server in action with Claude Desktop:
 
 https://github.com/user-attachments/assets/653c3956-0bfb-46c4-9e72-8a6d75e3a80d
 
+## Documentation
+
+| Resource | Description |
+|----------|-------------|
+| [**Quick Start Guide**](QUICKSTART.md) | Get running in under 5 minutes |
+| [**Full Documentation**](docs/README.md) | Complete guides and reference |
+| [**MCP Client Setup**](docs/guides/mcp-clients.md) | Configure Claude Desktop, Cursor, VS Code |
+| [**Tools Reference**](docs/reference/tools.md) | All 20 MCP tools with parameters |
+| [**Troubleshooting**](docs/guides/troubleshooting.md) | Common issues and solutions |
+
+**Additional resources:**
+- [Local Development](docs/setup/local-development.md) - Build from source
+- [Docker Setup](docs/setup/docker.md) - Container deployment
+- [Security Hardening](docs/setup/security-hardening.md) - Production configurations
+- [Contributing](docs/contributing.md) - How to contribute
+
 ## Prerequisites
 
 - Node.js 18 or higher
