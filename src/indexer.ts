@@ -46,7 +46,7 @@ const INDEX_CACHE_FILE = path.join(
 );
 
 // Increment when extraction logic changes to force cache rebuild
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 interface PersistedIndex {
   cacheVersion?: number;
@@ -185,7 +185,7 @@ function extractPublishedDate(metadata: Record<string, unknown>): string | undef
 function normalizeDocType(typeGuess: string): FrmrDocumentType {
   const upper = typeGuess.toUpperCase();
   if (
-    ["KSI", "MAS", "VDR", "SCN", "FRD", "ADS", "CCM", "FSI", "ICP", "PVA", "RSC", "UCM"].includes(upper)
+    ["KSI", "MAS", "VDR", "SCN", "FRD", "ADS", "CCM", "FSI", "ICP", "PVA", "SCG", "UCM"].includes(upper)
   ) {
     return upper as FrmrDocumentType;
   }
@@ -197,66 +197,140 @@ interface ExtractedItem {
   category?: string;
 }
 
-/**
- * Recursively extract all items from nested FRMR JSON structure.
- * Uses flexible pattern matching to handle various item array naming conventions.
- */
-function extractAllItems(
+const ID_KEY_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)+$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function injectId(
+  id: string,
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  if (typeof value.id === "string" && value.id.length > 0) {
+    return value;
+  }
+  return { id, ...value };
+}
+
+function collectIdMappedItems(
   obj: unknown,
-  parentCategory?: string,
+): Record<string, unknown>[] {
+  const items: Record<string, unknown>[] = [];
+  if (!isRecord(obj)) {
+    return items;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (!isRecord(value)) {
+      continue;
+    }
+    if (ID_KEY_PATTERN.test(key)) {
+      items.push(injectId(key, value));
+      continue;
+    }
+    items.push(...collectIdMappedItems(value));
+  }
+
+  return items;
+}
+
+function extractItemsFromData(
+  data: unknown,
+): Record<string, unknown>[] {
+  if (!isRecord(data)) {
+    return [];
+  }
+  return collectIdMappedItems(data);
+}
+
+/**
+ * Extract KSI indicators specifically with theme information.
+ * Supports both indicator arrays and keyed indicator maps.
+ */
+function extractKsiIndicators(
+  ksiSection: Record<string, unknown>,
 ): ExtractedItem[] {
   const results: ExtractedItem[] = [];
-  if (!obj || typeof obj !== "object") return results;
 
-  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    // Skip metadata keys (case-insensitive)
-    const keyLower = key.toLowerCase();
-    if (["$schema", "$id", "info", "metadata"].includes(keyLower)) continue;
+  for (const [themeName, themeData] of Object.entries(ksiSection)) {
+    if (!isRecord(themeData)) continue;
+    const indicators = themeData.indicators;
+    const themeTitle =
+      typeof themeData.short_name === "string"
+        ? themeData.short_name
+        : themeName;
+    const themeDescription =
+      typeof themeData.theme === "string"
+        ? themeData.theme
+        : undefined;
 
-    // Found an array of items (using flexible pattern matching)
-    if (isItemArrayKey(key) && Array.isArray(value)) {
-      for (const item of value) {
-        results.push({ item, category: parentCategory });
+    if (Array.isArray(indicators)) {
+      for (const indicator of indicators) {
+        if (!isRecord(indicator)) continue;
+        results.push({
+          item: {
+            ...indicator,
+            theme: themeTitle,
+            themeId: themeName,
+            themeDescription,
+          },
+          category: themeTitle,
+        });
       }
-    } else if (typeof value === "object" && value !== null) {
-      // Recurse into nested objects, passing current key as potential category
-      results.push(...extractAllItems(value, key));
+      continue;
+    }
+
+    if (isRecord(indicators)) {
+      for (const [id, indicator] of Object.entries(indicators)) {
+        if (!isRecord(indicator)) continue;
+        results.push({
+          item: {
+            ...injectId(id, indicator),
+            theme: themeTitle,
+            themeId: themeName,
+            themeDescription,
+          },
+          category: themeTitle,
+        });
+      }
     }
   }
   return results;
 }
 
 /**
- * Extract KSI indicators specifically with theme information.
- * KSI structure: { KSI: { AFR: { indicators: [...] }, CED: { indicators: [...] }, ... } }
+ * Recursively extract all items from nested FRMR JSON structure.
+ * Handles item arrays and keyed object maps where IDs are the object keys.
  */
-function extractKsiIndicators(
-  parsed: Record<string, unknown>,
+function extractAllItems(
+  obj: unknown,
+  parentCategory?: string,
 ): ExtractedItem[] {
   const results: ExtractedItem[] = [];
-  const ksiSection = parsed.KSI;
+  if (!isRecord(obj)) return results;
 
-  if (!ksiSection || typeof ksiSection !== "object") {
-    return results;
-  }
+  for (const [key, value] of Object.entries(obj)) {
+    const keyLower = key.toLowerCase();
+    if (["$schema", "$id", "info", "metadata"].includes(keyLower)) continue;
 
-  for (const [themeName, themeData] of Object.entries(
-    ksiSection as Record<string, unknown>,
-  )) {
-    if (!themeData || typeof themeData !== "object") continue;
-    const theme = themeData as Record<string, unknown>;
-    const indicators = theme.indicators;
+    if (isItemArrayKey(key) && Array.isArray(value)) {
+      for (const item of value) {
+        if (isRecord(item)) {
+          results.push({ item, category: parentCategory });
+        }
+      }
+      continue;
+    }
 
-    if (Array.isArray(indicators)) {
-      for (const indicator of indicators) {
+    if (isRecord(value)) {
+      if (ID_KEY_PATTERN.test(key)) {
         results.push({
-          item: {
-            ...((indicator as Record<string, unknown>) ?? {}),
-            theme: themeName,
-            themeName: theme.name,
-          },
-          category: themeName,
+          item: injectId(key, value),
+          category: parentCategory,
         });
+      } else {
+        results.push(...extractAllItems(value, key));
       }
     }
   }
@@ -424,13 +498,17 @@ function buildKsiItems(
 function parseControlId(
   control: string,
 ): { control: string; enhancements: string[] } | null {
-  const baseMatch = control.match(/^([A-Z]{2}-\d{1,3})/);
+  const normalized = control.toUpperCase();
+  const baseMatch = normalized.match(/^([A-Z]{2}-\d{1,3})/);
   if (!baseMatch) {
     return null;
   }
-  const enhancements = unique(
-    (control.match(/\(\w+\)/g) ?? []).map((value) => value),
-  );
+  const enhancements = unique([
+    ...(normalized.match(/\(\w+\)/g) ?? []).map((value) => value),
+    ...Array.from(normalized.matchAll(/\.(\w+)/g)).map(
+      (match) => `(${match[1]})`,
+    ),
+  ]);
   return {
     control: baseMatch[1],
     enhancements,
@@ -542,32 +620,137 @@ async function scanRepository(): Promise<BuildResult> {
       continue;
     }
 
-    const docTypeGuess = normalizeDocType(
-      guessFrmrTypeFromFilename(path.basename(relativePath)),
-    );
-
     const parsedRecord = parsed as Record<string, unknown>;
+    const basename = path.basename(relativePath);
 
-    // New FRMR structure uses 'info' instead of 'metadata'
+    const pushDocument = (options: {
+      type: FrmrDocumentType;
+      path: string;
+      title: string;
+      version?: string;
+      published?: string;
+      raw: Record<string, unknown>;
+      items: unknown[];
+      collectAsKsi?: boolean;
+    }): void => {
+      const idKey = detectIdKey(options.items) ?? "id";
+      const docRecord: FrmrDocumentRecord = {
+        type: options.type,
+        title: options.title,
+        version: options.version,
+        published: options.published,
+        path: options.path,
+        idHint: options.type !== "unknown" ? options.type : undefined,
+        itemCount: options.items.length,
+        raw: options.raw,
+        rawText: JSON.stringify(options.raw, null, 2),
+        topLevelKeys: Object.keys(options.raw),
+        idKey,
+      };
+
+      frmrDocuments.push(docRecord);
+
+      if (options.collectAsKsi && options.items.length) {
+        ksiItems.push(...buildKsiItems(docRecord, options.items));
+      }
+
+      if (options.items.length) {
+        controlMappings.push(
+          ...collectControlMappings(
+            options.type,
+            options.path,
+            idKey,
+            options.items,
+          ),
+        );
+      }
+    };
+
+    const isUnifiedDoc =
+      /^frmr\.documentation(?:\.[^.]+)?\.json$/i.test(basename) &&
+      isRecord(parsedRecord.FRD) &&
+      isRecord(parsedRecord.FRR) &&
+      isRecord(parsedRecord.KSI);
+
+    if (isUnifiedDoc) {
+      const rootInfo = isRecord(parsedRecord.info) ? parsedRecord.info : {};
+      const rootVersion =
+        (typeof rootInfo.version === "string" && rootInfo.version) ||
+        extractVersionFromString(basename);
+      const rootPublished =
+        (typeof rootInfo.last_updated === "string" && rootInfo.last_updated) ||
+        extractPublishedDate(rootInfo);
+
+      const frdSection = parsedRecord.FRD as Record<string, unknown>;
+      const frdInfo = isRecord(frdSection.info) ? frdSection.info : {};
+      const frdTitle =
+        (typeof frdInfo.name === "string" && frdInfo.name) ||
+        "FedRAMP Definitions";
+      pushDocument({
+        type: "FRD",
+        path: `${normalizedPath}#FRD`,
+        title: frdTitle,
+        version: rootVersion,
+        published: rootPublished,
+        raw: frdSection,
+        items: extractItemsFromData(frdSection.data),
+      });
+
+      const ksiSection = parsedRecord.KSI as Record<string, unknown>;
+      const ksiIndicators = extractKsiIndicators(ksiSection).map(
+        (entry) => entry.item,
+      );
+      pushDocument({
+        type: "KSI",
+        path: `${normalizedPath}#KSI`,
+        title: "Key Security Indicators",
+        version: rootVersion,
+        published: rootPublished,
+        raw: ksiSection,
+        items: ksiIndicators,
+        collectAsKsi: true,
+      });
+
+      const frrSection = parsedRecord.FRR as Record<string, unknown>;
+      for (const [key, value] of Object.entries(frrSection)) {
+        if (!isRecord(value)) {
+          continue;
+        }
+        const docType = normalizeDocType(key);
+        const docInfo = isRecord(value.info) ? value.info : {};
+        const docTitle =
+          (typeof docInfo.name === "string" && docInfo.name) ||
+          deriveTitleFromFilename(`FRMR.${key}.json`);
+        pushDocument({
+          type: docType,
+          path: `${normalizedPath}#FRR.${key}`,
+          title: docTitle,
+          version: rootVersion,
+          published: rootPublished,
+          raw: value,
+          items: extractItemsFromData(value.data),
+        });
+      }
+
+      continue;
+    }
+
+    const docTypeGuess = normalizeDocType(
+      guessFrmrTypeFromFilename(basename),
+    );
     const info =
       parsedRecord.info && typeof parsedRecord.info === "object"
         ? (parsedRecord.info as Record<string, unknown>)
         : {};
-
-    // Also check legacy 'metadata' for backwards compatibility
     const metadata =
       parsedRecord.metadata && typeof parsedRecord.metadata === "object"
         ? (parsedRecord.metadata as Record<string, unknown>)
         : {};
-
-    // Extract title from info.name, metadata.title, or parsedRecord.title
     const title =
       (typeof info.name === "string" && info.name) ||
       (typeof metadata.title === "string" && metadata.title) ||
       (typeof parsedRecord.title === "string" && parsedRecord.title) ||
-      deriveTitleFromFilename(path.basename(relativePath));
-
-    // Extract version from info.releases[0].id or fallback to filename
+      deriveTitleFromFilename(basename);
     const releases = Array.isArray(info.releases) ? info.releases : [];
     const latestRelease =
       releases.length > 0 && typeof releases[0] === "object"
@@ -576,56 +759,24 @@ async function scanRepository(): Promise<BuildResult> {
     const version =
       (latestRelease && typeof latestRelease.id === "string" && latestRelease.id) ||
       (typeof metadata.version === "string" && metadata.version) ||
-      extractVersionFromString(path.basename(relativePath));
-
-    // Extract published date from releases or legacy metadata
+      extractVersionFromString(basename);
     const published =
       (latestRelease && typeof latestRelease.published_date === "string"
         ? latestRelease.published_date
         : undefined) || extractPublishedDate(metadata);
-
-    // New structure: use extractAllItems for nested requirements/indicators
     const extractedItems = extractAllItems(parsedRecord);
-    const items = extractedItems.map((e) => e.item);
-    const idKey = detectIdKey(items);
+    const items = extractedItems.map((entry) => entry.item);
 
-    const docRecord: FrmrDocumentRecord = {
+    pushDocument({
       type: docTypeGuess,
+      path: normalizedPath,
       title,
       version,
       published,
-      path: normalizedPath,
-      idHint: docTypeGuess !== "unknown" ? docTypeGuess : undefined,
-      itemCount: items.length,
-      raw: parsed,
-      rawText: content,
-      topLevelKeys: Object.keys(parsedRecord),
-      idKey,
-    };
-
-    frmrDocuments.push(docRecord);
-
-    // For KSI documents, use specialized extraction that preserves theme info
-    if (docTypeGuess === "KSI") {
-      const ksiIndicators = extractKsiIndicators(parsedRecord);
-      if (ksiIndicators.length > 0) {
-        ksiItems.push(
-          ...buildKsiItems(
-            docRecord,
-            ksiIndicators.map((e) => e.item),
-          ),
-        );
-      } else if (items.length) {
-        // Fallback to generic items if KSI-specific extraction fails
-        ksiItems.push(...buildKsiItems(docRecord, items));
-      }
-    }
-
-    if (items.length) {
-      controlMappings.push(
-        ...collectControlMappings(docTypeGuess, normalizedPath, idKey, items),
-      );
-    }
+      raw: parsedRecord,
+      items,
+      collectAsKsi: docTypeGuess === "KSI",
+    });
   }
 
   const builder = new lunr.Builder();

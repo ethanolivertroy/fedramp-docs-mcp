@@ -5,7 +5,7 @@ description: Analyzes FedRAMP FRMR documents to extract control mappings, KSI en
 
 When analyzing FRMR documents:
 
-1. Identify the document type (KSI, MAS, VDR, SCN, FRD, ADS, CCM, FSI, ICP, PVA, RSC, UCM)
+1. Identify the document type (KSI, MAS, VDR, SCN, FRD, ADS, CCM, FSI, ICP, PVA, SCG, UCM)
 2. Extract control mappings between NIST SP 800-53 and FedRAMP requirements
 3. Identify Key Security Indicators (KSI) when relevant
 4. Highlight significant changes between document versions

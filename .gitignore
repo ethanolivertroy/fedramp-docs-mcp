@@ -58,3 +58,4 @@ tests/**/*.d.ts
 # Local development
 .local/
 .mcpregistry_*
+.firecrawl/

@@ -12,8 +12,8 @@ interface Definition {
 }
 
 const schema = z.object({
-  term: z.string().describe("Search term to find in definitions"),
-  limit: z.number().int().min(1).max(100).default(20),
+  term: z.string().describe("Search term to find in FedRAMP definitions (searches terms, definitions, and alternate names)"),
+  limit: z.number().int().min(1).max(100).default(20).describe("Maximum number of definitions to return"),
 });
 
 export const searchDefinitionsTool: ToolDefinition<
@@ -21,9 +21,16 @@ export const searchDefinitionsTool: ToolDefinition<
   { total: number; definitions: Definition[] }
 > = {
   name: "search_definitions",
+  title: "Search FedRAMP Definitions",
   description:
-    "Search FedRAMP definitions (FRD document) by term. Returns matching definitions with their full text and any alternate terms.",
+    "Search FedRAMP definitions (FRD document) by term. Returns matching definitions with their full text, alternate terms, and notes. Useful for looking up FedRAMP-specific terminology, acronyms, and compliance vocabulary. [Category: Search]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const frdDoc = getFrmrDocuments().find((doc) => doc.type === "FRD");
     if (!frdDoc || !frdDoc.raw) {
@@ -31,8 +38,16 @@ export const searchDefinitionsTool: ToolDefinition<
     }
 
     const raw = frdDoc.raw as Record<string, unknown>;
-    const frd = raw.FRD as Record<string, unknown> | undefined;
-    const allDefs = (frd?.ALL as Definition[]) ?? [];
+    const data = raw.data as Record<string, unknown> | undefined;
+    const both = data?.both as Record<string, unknown> | undefined;
+    const allDefs: Definition[] = both
+      ? Object.entries(both)
+          .filter(([, value]) => Boolean(value && typeof value === "object"))
+          .map(([id, value]) => ({
+            id,
+            ...(value as Omit<Definition, "id">),
+          }))
+      : [];
 
     const searchLower = input.term.toLowerCase();
     const matches = allDefs.filter((def) => {

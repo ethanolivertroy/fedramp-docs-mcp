@@ -8,6 +8,32 @@ interface DiffOptions {
   idKey?: string;
 }
 
+const ID_KEY_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)+$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function collectIdMappedItems(
+  obj: unknown,
+): Array<Record<string, unknown>> {
+  if (!isRecord(obj)) {
+    return [];
+  }
+  const items: Array<Record<string, unknown>> = [];
+  for (const [key, value] of Object.entries(obj)) {
+    if (!isRecord(value)) {
+      continue;
+    }
+    if (ID_KEY_PATTERN.test(key)) {
+      items.push({ id: key, ...value });
+      continue;
+    }
+    items.push(...collectIdMappedItems(value));
+  }
+  return items;
+}
+
 function extractItems(
   doc: FrmrDocumentRecord,
 ): Array<Record<string, unknown>> {
@@ -26,21 +52,18 @@ function extractItems(
       );
     }
   }
-  return [];
+  return collectIdMappedItems(raw.data ?? raw);
 }
 
 function getIdKey(
   options: DiffOptions,
-  left: FrmrDocumentRecord,
-  right: FrmrDocumentRecord,
+  _left: FrmrDocumentRecord,
+  _right: FrmrDocumentRecord,
 ): string {
   if (options.idKey) {
     return options.idKey;
   }
-  if (left.idKey && right.idKey && left.idKey === right.idKey) {
-    return left.idKey;
-  }
-  return left.idKey ?? right.idKey ?? "id";
+  return "id";
 }
 
 function toMap(

@@ -162,14 +162,42 @@ function findFrmrSignificantReferences(
   limit: number,
 ): SignificantChangeSource[] {
   const results: SignificantChangeSource[] = [];
+  const idKeyPattern = /^[A-Z0-9]+(?:-[A-Z0-9]+)+$/;
+
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+  const collectIdMappedItems = (
+    value: unknown,
+  ): Array<Record<string, unknown>> => {
+    if (!isRecord(value)) {
+      return [];
+    }
+    const items: Array<Record<string, unknown>> = [];
+    for (const [key, entry] of Object.entries(value)) {
+      if (!isRecord(entry)) {
+        continue;
+      }
+      if (idKeyPattern.test(key)) {
+        items.push({ id: key, ...entry });
+        continue;
+      }
+      items.push(...collectIdMappedItems(entry));
+    }
+    return items;
+  };
 
   for (const doc of getFrmrDocuments()) {
     const raw = doc.raw as Record<string, unknown>;
-    const arrays = [
+    const directArrays = [
       raw.items,
       raw.controls,
       raw.entries,
     ].filter((value): value is unknown[] => Array.isArray(value));
+    const arrays =
+      directArrays.length > 0
+        ? directArrays
+        : [collectIdMappedItems(raw.data ?? raw)];
     const matches: string[] = [];
     for (const array of arrays) {
       for (const item of array) {

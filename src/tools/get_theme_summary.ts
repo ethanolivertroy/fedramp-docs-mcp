@@ -37,15 +37,22 @@ interface ThemeSummary {
 const schema = z.object({
   theme: z
     .enum(["AFR", "CED", "CMT", "CNA", "IAM", "INR", "MLA", "PIY", "RPL", "SVC", "TPR"])
-    .describe("KSI theme code"),
+    .describe("KSI theme code (e.g. IAM, CNA, MLA, INR)"),
 });
 
 export const getThemeSummaryTool: ToolDefinition<typeof schema, ThemeSummary> =
   {
     name: "get_theme_summary",
+    title: "Get KSI Theme Summary",
     description:
-      "Get comprehensive guidance for a KSI theme. Returns all indicators in the theme, impact breakdown, related NIST controls, and links to relevant documentation.",
+      "Get comprehensive guidance for a KSI theme. Returns all indicators in the theme, impact breakdown by FIPS 199 level, related NIST controls, and links to relevant FedRAMP documentation. Available themes: AFR, CED, CMT, CNA, IAM, INR, MLA, PIY, RPL, SVC, TPR. [Category: KSI]",
     schema,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     execute: async (input) => {
       const all = getKsiItems();
       const indicators = all.filter(

@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/653c3956-0bfb-46c4-9e72-8a6d75e3a80d
 | [**Quick Start Guide**](QUICKSTART.md) | Get running in under 5 minutes |
 | [**Full Documentation**](docs/README.md) | Complete guides and reference |
 | [**MCP Client Setup**](docs/guides/mcp-clients.md) | Configure Claude Desktop, Cursor, VS Code |
-| [**Tools Reference**](docs/reference/tools.md) | All 20 MCP tools with parameters |
+| [**Tools Reference**](docs/reference/tools.md) | All 21 MCP tools with parameters |
 | [**Troubleshooting**](docs/guides/troubleshooting.md) | Common issues and solutions |
 
 **Additional resources:**
@@ -56,7 +56,7 @@ https://github.com/user-attachments/assets/653c3956-0bfb-46c4-9e72-8a6d75e3a80d
 | FSI | FedRAMP Security Inbox |
 | ICP | Incident Communications Procedures |
 | PVA | Persistent Validation and Assessment |
-| RSC | Recommended Secure Configuration |
+| SCG | Secure Configuration Guide |
 | UCM | Using Cryptographic Modules |
 
 ## Getting Started
@@ -169,7 +169,7 @@ The server includes automatic update checking to keep the FedRAMP docs current:
 
 ## Available Tools
 
-The server provides 20 tools organized into categories. All tools follow the error model and respond with JSON payloads.
+The server provides 21 tools organized into categories. All tools follow the error model and respond with JSON payloads.
 
 ### Document Discovery
 | Tool | Description |
@@ -212,6 +212,7 @@ The server provides 20 tools organized into categories. All tools follow the err
 ### System
 | Tool | Description |
 |------|-------------|
+| `search_tools` | Search and discover available tools by keyword or category |
 | `health_check` | Confirm the server indexed successfully |
 | `update_repository` | Force update the cached FedRAMP docs |
 
@@ -356,6 +357,61 @@ dashboard that shows compliance posture at a glance."
 "Analyze all high-impact KSI requirements and create a prioritized
 remediation roadmap template."
 ```
+
+## Tool Search & Deferred Loading
+
+With 21 tools, this MCP server is a great candidate for **deferred tool loading** (also known as tool search). Instead of loading all tools upfront, clients can load a small set of essential tools and discover the rest on demand via the `search_tools` tool.
+
+### The `search_tools` Tool
+
+The `search_tools` tool lets clients discover available tools by keyword or category:
+
+```
+"What tools help with KSI compliance?"
+→ search_tools(query="ksi compliance")
+→ Returns: list_ksi, get_ksi, filter_by_impact, get_theme_summary, get_evidence_examples
+
+"What analysis tools are available?"
+→ search_tools(category="Analysis")
+→ Returns: diff_frmr, grep_controls_in_markdown, get_significant_change_guidance
+```
+
+### Recommended Non-Deferred Tools
+
+When using deferred loading, keep these 5 tools always loaded:
+
+| Tool | Why Always Loaded |
+|------|-------------------|
+| `search_tools` | Required for discovering other tools |
+| `search_markdown` | Most common entry point for documentation queries |
+| `list_frmr_documents` | Starting point for FRMR data exploration |
+| `health_check` | Diagnostics and status verification |
+| `get_requirement_by_id` | Universal ID lookup across all document types |
+
+### Claude API Configuration with Deferred Loading
+
+When using the Claude API with `mcp_toolset`, you can configure deferred loading:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    mcp_servers=[
+        {
+            "type": "stdio",
+            "command": "fedramp-docs-mcp",
+            "name": "fedramp-docs",
+        }
+    ],
+    messages=[{"role": "user", "content": "..."}],
+)
+```
+
+The Claude API will use tool annotations (`readOnlyHint`, `destructiveHint`, etc.) to make informed decisions about tool selection. All 21 tools include annotations.
 
 ## MCP Client Configuration
 

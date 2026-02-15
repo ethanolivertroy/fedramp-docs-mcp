@@ -1,13 +1,18 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  CallToolResult,
+  ToolAnnotations,
+} from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 import { createError, isToolExecutionError } from "../util.js";
 
 interface ToolDefinition<Schema extends z.ZodTypeAny, Result> {
   name: string;
+  title?: string;
   description: string;
   schema: Schema;
+  annotations?: ToolAnnotations;
   execute: (input: z.infer<Schema>) => Promise<Result> | Result;
 }
 
@@ -15,15 +20,19 @@ export function registerTool<Schema extends z.ZodTypeAny, Result>(
   server: McpServer,
   definition: ToolDefinition<Schema, Result>,
 ): void {
-  // Extract the shape from the Zod schema
+  // Extract the shape from the Zod schema for the inputSchema
   const schemaShape = definition.schema instanceof z.ZodObject
     ? definition.schema.shape
     : {};
 
-  server.tool(
+  server.registerTool(
     definition.name,
-    definition.description,
-    schemaShape,
+    {
+      title: definition.title,
+      description: definition.description,
+      inputSchema: schemaShape,
+      annotations: definition.annotations,
+    },
     async (args: any) => {
       try {
         const parsed = definition.schema.parse(args ?? {});

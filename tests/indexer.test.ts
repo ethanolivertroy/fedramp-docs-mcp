@@ -15,7 +15,7 @@ beforeEach(async () => {
 describe("indexer", () => {
   it("indexes FRMR documents with metadata", () => {
     const docs = getFrmrDocuments();
-    expect(docs.length).toBeGreaterThanOrEqual(3);
+    expect(docs.length).toBeGreaterThanOrEqual(8);
     const ksiDoc = docs.find((doc) => doc.type === "KSI");
     expect(ksiDoc).toBeDefined();
     expect(ksiDoc?.itemCount).toBeGreaterThan(0);
@@ -24,8 +24,8 @@ describe("indexer", () => {
   it("extracts KSI items", () => {
     const items = getKsiItems();
     const ids = items.map((item) => item.id);
-    expect(ids).toContain("KSI-001");
-    expect(ids).toContain("KSI-002");
+    expect(ids).toContain("KSI-IAM-AAM");
+    expect(ids).toContain("KSI-IAM-APM");
   });
 
   it("extracts control mappings", () => {

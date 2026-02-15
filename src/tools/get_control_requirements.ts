@@ -26,9 +26,16 @@ export const getControlRequirementsTool: ToolDefinition<
   { control: string; total: number; requirements: ControlRequirement[] }
 > = {
   name: "get_control_requirements",
+  title: "Get Control Requirements",
   description:
-    "Get all FedRAMP requirements mapped to a specific NIST control. Returns KSI items and FRMR requirements that reference the control.",
+    "Get all FedRAMP requirements mapped to a specific NIST 800-53 control. Returns KSI items and FRMR requirements that reference the control, with source details and theme categorization. Useful for understanding what FedRAMP expects for a given control. [Category: Controls]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const mappings = listControlMappings({ control: input.control });
     const ksiItems = getKsiItems();

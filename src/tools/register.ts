@@ -19,6 +19,7 @@ import { listVersionsTool } from "./list_versions.js";
 import { readMarkdownTool } from "./read_markdown.js";
 import { searchDefinitionsTool } from "./search_definitions.js";
 import { searchMarkdownTool } from "./search_markdown.js";
+import { searchToolsTool } from "./search_tools.js";
 import { updateRepositoryTool } from "./update_repository.js";
 
 export function registerTools(server: McpServer): void {
@@ -47,6 +48,7 @@ export function registerTools(server: McpServer): void {
     grepControlsTool,
     significantChangeTool,
     // System tools
+    searchToolsTool,
     healthCheckTool,
     updateRepositoryTool,
   ]);

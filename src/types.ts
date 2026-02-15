@@ -9,7 +9,7 @@ export type FrmrDocumentType =
   | "FSI"
   | "ICP"
   | "PVA"
-  | "RSC"
+  | "SCG"
   | "UCM"
   | "unknown";
 

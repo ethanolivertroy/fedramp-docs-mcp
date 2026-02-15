@@ -10,14 +10,14 @@ beforeAll(async () => {
 describe("diff", () => {
   it("detects added and modified items", () => {
     const diff = diffFrmrDocuments(
-      "FRMR.KSI.previous.json",
-      "FRMR.KSI.sample.json",
+      "FRMR.documentation.previous.json#KSI",
+      "FRMR.documentation.sample.json#KSI",
     );
     expect(diff.summary.added).toBeGreaterThanOrEqual(1);
     expect(diff.summary.modified).toBeGreaterThanOrEqual(1);
     const addedIds = diff.changes
       .filter((change) => change.type === "added")
       .map((change) => change.id);
-    expect(addedIds).toContain("KSI-002");
+    expect(addedIds).toContain("KSI-IAM-APM");
   });
 });

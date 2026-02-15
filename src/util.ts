@@ -117,7 +117,8 @@ export function extractControlLikeStrings(input: unknown): string[] {
   return [];
 }
 
-const CONTROL_PATTERN = /\b([A-Za-z]{2}-\d{1,3}(?:\([\dA-Za-z]+\))*)\b/gi;
+const CONTROL_PATTERN =
+  /\b([A-Za-z]{2}-\d{1,3}(?:(?:\.[\dA-Za-z]+)|(?:\([\dA-Za-z]+\)))*)\b/gi;
 
 export function findControlIds(text: string): string[] {
   const matches = new Set<string>();

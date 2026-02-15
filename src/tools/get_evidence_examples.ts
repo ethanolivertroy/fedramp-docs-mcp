@@ -44,7 +44,7 @@ const schema = z.object({
     .string()
     .optional()
     .describe("Filter by KSI theme (e.g., IAM, CNA, AFR)"),
-  id: z.string().optional().describe("Get evidence for a specific KSI item ID"),
+  id: z.string().optional().describe("Get evidence for a specific KSI item ID (e.g. KSI-IAM-AAM)"),
   includeRetired: z
     .boolean()
     .optional()
@@ -57,9 +57,16 @@ export const getEvidenceExamplesTool: ToolDefinition<
   EvidenceExamplesResult
 > = {
   name: "get_evidence_examples",
+  title: "Get Evidence Examples",
   description:
-    "Get suggested evidence examples for KSI compliance. Returns automation-friendly evidence collection sources (APIs, CLI commands, artifacts) for each KSI. NOTE: These are community suggestions, not official FedRAMP guidance.",
+    "Get suggested evidence examples for KSI compliance. Returns automation-friendly evidence collection sources (APIs, CLI commands, artifacts) for each KSI. Useful for building compliance automation, audit preparation, and evidence collection checklists. NOTE: These are community suggestions, not official FedRAMP guidance. [Category: KSI]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const evidenceData = loadEvidenceExamples();
     const ksiItems = getKsiItems();

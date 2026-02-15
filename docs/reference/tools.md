@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-fedramp-docs-mcp provides 20 tools for querying FedRAMP documentation. This reference covers all tools with their parameters and usage examples.
+fedramp-docs-mcp provides 21 tools for querying FedRAMP documentation. This reference covers all tools with their parameters and usage examples.
 
 ## Discovery Tools
 
@@ -326,6 +326,25 @@ Aggregate markdown sections and FRMR references related to Significant Change.
 ---
 
 ## Server Management Tools
+
+### search_tools
+
+Search and discover available FedRAMP MCP tools by keyword or category. Use this to find the right tool for your task.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `query` | string | No | Search query (empty to browse all tools) |
+| `category` | string | No | Filter by category: Discovery, KSI, Controls, Search, Analysis, System |
+| `limit` | number | No | Max results (1-21, default 5) |
+
+**Example prompts:**
+> "Search FedRAMP tools for 'control'"
+> "What tools are available for KSI analysis?"
+> "List all FedRAMP MCP tools"
+
+---
 
 ### update_repository
 

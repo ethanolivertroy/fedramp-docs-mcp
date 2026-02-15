@@ -5,7 +5,7 @@ import type { ToolDefinition } from "./base.js";
 import { createError } from "../util.js";
 
 const schema = z.object({
-  path: z.string(),
+  path: z.string().describe("Path to the markdown file (as returned by search_markdown)"),
 });
 
 export const readMarkdownTool: ToolDefinition<
@@ -17,8 +17,16 @@ export const readMarkdownTool: ToolDefinition<
   }
 > = {
   name: "read_markdown",
-  description: "Read a markdown file and return its contents and digest.",
+  title: "Read Markdown File",
+  description:
+    "Read a FedRAMP markdown file and return its full contents and SHA-256 digest. Use search_markdown first to find relevant file paths, then read_markdown to retrieve the complete document content. [Category: Search]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const doc = getMarkdownDoc(input.path);
     if (!doc) {

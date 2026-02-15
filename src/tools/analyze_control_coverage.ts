@@ -23,9 +23,16 @@ export const analyzeControlCoverageTool: ToolDefinition<
   }
 > = {
   name: "analyze_control_coverage",
+  title: "Analyze Control Coverage",
   description:
-    "Analyze which NIST control families have FedRAMP requirements. Returns a coverage report showing which control families are addressed and how many controls/mappings exist for each.",
+    "Analyze which NIST 800-53 control families have FedRAMP requirements. Returns a coverage report showing control families, number of controls and mappings per family, and which FRMR sources contribute. Useful for gap analysis and compliance dashboards. [Category: Controls]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async () => {
     const mappings = getControlMappings();
 

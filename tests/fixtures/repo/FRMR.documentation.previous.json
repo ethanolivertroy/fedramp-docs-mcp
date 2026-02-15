@@ -1,0 +1,92 @@
+{
+  "info": {
+    "title": "FedRAMP Machine-Readable Documentation",
+    "version": "0.9.1-beta",
+    "last_updated": "2026-01-20"
+  },
+  "FRD": {
+    "info": {
+      "name": "FedRAMP Definitions",
+      "short_name": "FRD"
+    },
+    "data": {
+      "both": {
+        "FRD-ACV": {
+          "term": "Accepted Vulnerability",
+          "alts": ["accepted vulnerability"],
+          "definition": "A vulnerability with delayed mitigation."
+        }
+      }
+    }
+  },
+  "KSI": {
+    "IAM": {
+      "id": "KSI-IAM",
+      "short_name": "IAM",
+      "name": "Identity and Access Management",
+      "theme": "A secure cloud service offering controls access and user identity.",
+      "indicators": {
+        "KSI-IAM-AAM": {
+          "name": "Automating Account Management",
+          "statement": "Manage account lifecycle with automation.",
+          "controls": ["ac-2.2", "ia-12"],
+          "impact": {
+            "low": true,
+            "moderate": true,
+            "high": true
+          }
+        }
+      }
+    }
+  },
+  "FRR": {
+    "MAS": {
+      "info": {
+        "name": "Minimum Assessment Scope",
+        "short_name": "MAS"
+      },
+      "data": {
+        "both": {
+          "CSO": {
+            "MAS-CSO-IIR": {
+              "name": "Identify Information Resources",
+              "statement": "Providers MUST identify information resources in scope for authorization."
+            }
+          }
+        }
+      }
+    },
+    "SCG": {
+      "info": {
+        "name": "Secure Configuration Guide",
+        "short_name": "SCG"
+      },
+      "data": {
+        "both": {
+          "CFG": {
+            "SCG-CFG-BAS": {
+              "name": "Baseline Configurations",
+              "statement": "Providers SHOULD maintain baseline configurations."
+            }
+          }
+        }
+      }
+    },
+    "SCN": {
+      "info": {
+        "name": "Significant Change Notifications",
+        "short_name": "SCN"
+      },
+      "data": {
+        "both": {
+          "SCR": {
+            "SCN-SCR-MAJ": {
+              "name": "Major Significant Change",
+              "statement": "Providers SHOULD submit significant change details before architecture changes."
+            }
+          }
+        }
+      }
+    }
+  }
+}

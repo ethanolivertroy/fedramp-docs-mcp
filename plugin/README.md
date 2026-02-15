@@ -67,7 +67,7 @@ The plugin works with all 12 FedRAMP FRMR document types:
 | FSI | FedRAMP Security Inbox |
 | ICP | Incident Communications Procedures |
 | PVA | Persistent Validation and Assessment |
-| RSC | Recommended Secure Configuration |
+| SCG | Secure Configuration Guide |
 | UCM | Using Cryptographic Modules |
 
 ## Examples

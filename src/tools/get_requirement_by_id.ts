@@ -23,7 +23,7 @@ const schema = z.object({
   id: z
     .string()
     .describe(
-      "Requirement ID (e.g., KSI-IAM-01, FRR-MAS-01, FRR-VDR-01)",
+      "Requirement ID (e.g., KSI-IAM-AAM, MAS-CSO-IIR, FRD-ACV)",
     ),
 });
 
@@ -32,9 +32,16 @@ export const getRequirementByIdTool: ToolDefinition<
   RequirementResult
 > = {
   name: "get_requirement_by_id",
+  title: "Get Requirement by ID",
   description:
-    "Get any FedRAMP requirement by its ID. Works with KSI indicators (KSI-*), FRR requirements (FRR-*), and FRD definitions (FRD-*).",
+    "Get any FedRAMP requirement by its ID. Works with KSI indicators (KSI-*), FRR requirements (FRR-*), FRD definitions (FRD-*), and other FRMR item types. Universal lookup across all indexed documents. Case-insensitive. [Category: Search]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const searchId = input.id.toUpperCase();
 
@@ -66,22 +73,29 @@ export const getRequirementByIdTool: ToolDefinition<
     for (const doc of docs) {
       if (!doc.raw || typeof doc.raw !== "object") continue;
 
-      // Recursive search for item with matching ID
       const found = findItemById(doc.raw, searchId);
       if (found) {
+        const record = found.item;
         return {
-          id: searchId,
+          id: found.id,
           source: doc.type,
           documentPath: doc.path,
           documentTitle: doc.title,
-          title: (found as Record<string, unknown>).name as string | undefined,
-          statement: (found as Record<string, unknown>).statement as
-            | string
+          title:
+            (record.name as string | undefined) ??
+            (record.title as string | undefined),
+          statement: record.statement as string | undefined,
+          description: (record.description as string | undefined) ??
+            (record.definition as string | undefined),
+          theme: (record.theme as string | undefined) ??
+            (record.category as string | undefined),
+          impact: record.impact as
+            | { low?: boolean; moderate?: boolean; high?: boolean }
             | undefined,
-          description: (found as Record<string, unknown>).description as
-            | string
-            | undefined,
-          raw: found,
+          controlMapping: Array.isArray(record.controls)
+            ? (record.controls as string[])
+            : undefined,
+          raw: record,
         };
       }
     }
@@ -94,31 +108,50 @@ export const getRequirementByIdTool: ToolDefinition<
   },
 };
 
-function findItemById(obj: unknown, targetId: string): unknown | null {
-  if (!obj || typeof obj !== "object") return null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
 
+function findItemById(
+  obj: unknown,
+  targetId: string,
+): { id: string; item: Record<string, unknown> } | null {
   if (Array.isArray(obj)) {
     for (const item of obj) {
-      if (
-        item &&
-        typeof item === "object" &&
-        "id" in item &&
-        String((item as Record<string, unknown>).id).toUpperCase() === targetId
-      ) {
-        return item;
-      }
       const found = findItemById(item, targetId);
-      if (found) return found;
+      if (found) {
+        return found;
+      }
     }
-  } else {
-    const record = obj as Record<string, unknown>;
-    if ("id" in record && String(record.id).toUpperCase() === targetId) {
-      return record;
+    return null;
+  }
+
+  if (!isRecord(obj)) {
+    return null;
+  }
+
+  if (
+    typeof obj.id === "string" &&
+    obj.id.toUpperCase() === targetId
+  ) {
+    return {
+      id: obj.id,
+      item: obj,
+    };
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key.toUpperCase() === targetId && isRecord(value)) {
+      return {
+        id: key,
+        item: { id: key, ...value },
+      };
     }
-    for (const value of Object.values(record)) {
-      const found = findItemById(value, targetId);
-      if (found) return found;
+    const found = findItemById(value, targetId);
+    if (found) {
+      return found;
     }
   }
+
   return null;
 }

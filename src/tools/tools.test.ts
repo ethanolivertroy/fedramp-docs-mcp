@@ -29,6 +29,7 @@ import { analyzeControlCoverageTool } from "./analyze_control_coverage.js";
 import { getControlRequirementsTool } from "./get_control_requirements.js";
 import { getThemeSummaryTool } from "./get_theme_summary.js";
 import { getRequirementByIdTool } from "./get_requirement_by_id.js";
+import { searchToolCatalog, TOOL_CATALOG } from "./tool_catalog.js";
 
 // Sample test data
 const mockKsiItems: KsiItem[] = [
@@ -72,30 +73,30 @@ const mockFrdDocument: FrmrDocumentRecord = {
   path: "/docs/frd.json",
   title: "FedRAMP Definitions",
   rawText: "{}",
-  topLevelKeys: ["FRD"],
+  topLevelKeys: ["info", "data"],
   idKey: "id",
   itemCount: 3,
   raw: {
-    FRD: {
-      ALL: [
-        {
-          id: "FRD-001",
+    info: {
+      name: "FedRAMP Definitions",
+    },
+    data: {
+      both: {
+        "FRD-001": {
           term: "Authorization",
           definition: "The process of granting access to resources",
           alts: ["Auth", "Authz"],
         },
-        {
-          id: "FRD-002",
+        "FRD-002": {
           term: "Continuous Monitoring",
           definition: "Ongoing awareness of security status",
           alts: ["ConMon"],
         },
-        {
-          id: "FRD-003",
+        "FRD-003": {
           term: "FedRAMP",
           definition: "Federal Risk and Authorization Management Program",
         },
-      ],
+      },
     },
   },
 };
@@ -386,5 +387,61 @@ describe("get_requirement_by_id", () => {
     await expect(
       getRequirementByIdTool.execute({ id: "UNKNOWN-999" }),
     ).rejects.toThrow("Requirement not found");
+  });
+});
+
+describe("search_tools (tool catalog)", () => {
+  it("should find tools by keyword", () => {
+    const results = searchToolCatalog("ksi");
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.some((r) => r.name === "list_ksi")).toBe(true);
+    expect(results.some((r) => r.name === "get_ksi")).toBe(true);
+  });
+
+  it("should filter by category", () => {
+    const results = searchToolCatalog("", "Controls");
+
+    expect(results.length).toBe(3);
+    expect(results.every((r) => r.category === "Controls")).toBe(true);
+  });
+
+  it("should return empty for nonsense queries", () => {
+    const results = searchToolCatalog("xyzzy_nonexistent_gibberish");
+
+    expect(results.length).toBe(0);
+  });
+
+  it("should rank exact name match highest", () => {
+    const results = searchToolCatalog("list_ksi");
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].name).toBe("list_ksi");
+    expect(results[0].score).toBeGreaterThan(results[1]?.score ?? 0);
+  });
+
+  it("should respect limit parameter", () => {
+    const results = searchToolCatalog("control", undefined, 2);
+
+    expect(results.length).toBeLessThanOrEqual(2);
+  });
+
+  it("should return all tools when query is empty", () => {
+    const results = searchToolCatalog("", undefined, 100);
+
+    expect(results.length).toBe(TOOL_CATALOG.length);
+  });
+
+  it("should find tools by multi-word queries", () => {
+    const results = searchToolCatalog("significant change");
+
+    expect(results.some((r) => r.name === "get_significant_change_guidance")).toBe(true);
+  });
+
+  it("should combine category filter with keyword search", () => {
+    const results = searchToolCatalog("search", "Search");
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.category === "Search")).toBe(true);
   });
 });

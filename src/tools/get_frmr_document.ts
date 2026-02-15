@@ -5,9 +5,24 @@ import type { ToolDefinition } from "./base.js";
 
 const schema = z.object({
   type: z
-    .enum(["KSI", "MAS", "VDR", "SCN", "FRD", "ADS"])
-    .optional(),
-  path: z.string(),
+    .enum([
+      "KSI",
+      "MAS",
+      "VDR",
+      "SCN",
+      "FRD",
+      "ADS",
+      "CCM",
+      "FSI",
+      "ICP",
+      "PVA",
+      "SCG",
+      "UCM",
+      "unknown",
+    ])
+    .optional()
+    .describe("FRMR document type code"),
+  path: z.string().describe("Virtual path to the FRMR document (e.g. FRMR.documentation.json#KSI)"),
 });
 
 export const getFrmrDocumentTool: ToolDefinition<
@@ -19,8 +34,16 @@ export const getFrmrDocumentTool: ToolDefinition<
   }
 > = {
   name: "get_frmr_document",
-  description: "Retrieve a FRMR document with metadata, raw JSON, and summary. Use this to get KSI categories (like KSI-IAM, KSI-CNA), MAS requirements, or other FRMR content. First use list_frmr_documents to find available documents, then use this tool with the path. For KSI, use path 'FRMR.KSI.key-security-indicators.json'.",
+  title: "Get FRMR Document",
+  description:
+    "Retrieve a FRMR document with metadata, raw JSON, and summary. First use list_frmr_documents to find available virtual paths (for example `FRMR.documentation.json#KSI` or `FRMR.documentation.json#FRR.MAS`). Returns full document content for KSI, MAS, VDR, SCN, FRD, and other FRMR types. [Category: Discovery]",
   schema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   execute: async (input) => {
     const { meta, rawJson, summary } = getFrmrDocument(
       input.type as never,
