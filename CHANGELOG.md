@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-02-15
+
+### Added
+
+- **Automated upstream sync workflow** (ENG-541) — weekly GitHub Actions workflow that detects changes in the upstream FedRAMP/docs repository
+  - Lightweight `git ls-remote` check exits in ~5 seconds when nothing changed
+  - On change: clones upstream, runs unit + integration tests, creates a GitHub issue with change summary assigned to Copilot
+  - SHA-pinned actions following existing supply chain security conventions
+  - Duplicate issue prevention via `upstream-sync` label check
+- **Integration test suite** (`npm run test:integration`) validating the indexer against real upstream data
+  - 6 tests covering FRMR document indexing, KSI extraction, control mappings, and type validation
+  - Separate vitest config with 60s timeout, no fixture override
+- **README documentation** for integration test command
+
 ## [0.2.3] - 2026-02-15
 
 ### Added
