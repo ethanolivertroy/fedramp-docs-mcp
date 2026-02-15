@@ -40,7 +40,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "scan": "mcp-scanner stdio --stdio-command node --stdio-arg dist/index.js --analyzers yara --format summary"
+    "scan": "npm run build && FEDRAMP_DOCS_ALLOW_AUTO_CLONE=false mcp-scanner stdio --stdio-command node --stdio-arg dist/index.js --analyzers yara --format summary"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
