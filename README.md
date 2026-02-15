@@ -1,5 +1,7 @@
 # FedRAMP Docs MCP Server
 
+[![MCP Security Scan](https://github.com/ethanolivertroy/fedramp-docs-mcp/actions/workflows/mcp-scan.yml/badge.svg)](https://github.com/ethanolivertroy/fedramp-docs-mcp/actions/workflows/mcp-scan.yml)
+
 > **Disclaimer:** This is an unofficial, community project and is not affiliated with, endorsed by, or associated with FedRAMP or the U.S. federal government. The author is not officially affiliated with FedRAMP. The FedRAMP name and any related marks are property of their respective owners.
 
 Custom Model Context Protocol (MCP) server that makes the FedRAMP/docs repository queryable with FRMR-aware tooling. The server scans FRMR JSON datasets and supporting markdown guidance, exposes structured tools for analysis, and can optionally clone and cache the upstream repository for you.

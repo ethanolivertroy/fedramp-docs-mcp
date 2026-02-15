@@ -1,0 +1,55 @@
+name: MCP Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  mcp-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install MCP Scanner
+        run: pip install cisco-ai-mcp-scanner
+
+      - name: Run MCP Scanner
+        run: |
+          mcp-scanner stdio \
+            --stdio-command node \
+            --stdio-arg dist/index.js \
+            --analyzers yara \
+            --format summary | tee mcp-scan-results.txt
+        env:
+          FEDRAMP_DOCS_ALLOW_AUTO_CLONE: 'false'
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-scan-results
+          path: mcp-scan-results.txt
+          retention-days: 30
