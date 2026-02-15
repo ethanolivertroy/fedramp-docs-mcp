@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **MCP Security Scan CI workflow** using [Cisco's MCP Scanner](https://github.com/cisco-open/mcp-scanner) with YARA-based analysis
+- **MCP Security Scan CI workflow** using [Cisco's MCP Scanner](https://github.com/cisco-ai-defense/mcp-scanner) with YARA-based analysis
   - Runs on every push and PR to `main`
   - SHA-pinned GitHub Actions for supply chain security
   - Scan results uploaded as workflow artifacts (30-day retention)
