@@ -38,7 +38,8 @@
     "build": "tsc -p .",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "scan": "mcp-scanner stdio --stdio-command node --stdio-arg dist/index.js --analyzers yara --format summary"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
