@@ -928,7 +928,7 @@ Integration tests validate the indexer against the real upstream FedRAMP/docs cl
 npm run test:integration
 ```
 
-These tests clone and index the actual upstream repository, verifying that the parser handles current upstream data correctly. Set `FEDRAMP_DOCS_PATH` to skip the clone and use an existing checkout.
+These tests clone and index the actual upstream repository, verifying that the parser handles current upstream data correctly. Set `FEDRAMP_DOCS_PATH` to skip the clone and use an existing checkout. When using your own checkout, also set `FEDRAMP_DOCS_AUTO_UPDATE=false` to prevent the test from modifying it.
 
 ### Code Structure
 
