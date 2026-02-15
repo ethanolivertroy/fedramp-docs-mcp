@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-02-15
+
+### Added
+
+- **MCP client setup instructions** for Codex, Cursor, Windsurf, VS Code + GitHub Copilot, and Gemini CLI
+  - Updated `docs/guides/mcp-clients.md` and README with config snippets for each agent
+
+### Fixed
+
+- `npm run scan` now runs `npm run build` first and disables auto-clone to match CI behavior
+- Simplified `mcp-scan.yml` workflow to use `npm run scan` script (removes duplicate build step)
+- README integration test docs now warn about `FEDRAMP_DOCS_AUTO_UPDATE` when using own checkout
+
 ## [0.2.4] - 2026-02-15
 
 ### Added

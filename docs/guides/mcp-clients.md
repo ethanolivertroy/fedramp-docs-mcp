@@ -44,22 +44,27 @@ You should see a response showing indexed file counts and repository information
 
 ## Cursor
 
-1. Open Cursor Settings > MCP
+[Cursor](https://www.cursor.com/) supports MCP servers via project or global configuration.
 
-2. Add server configuration:
+**Config file location:**
+- Project: `.cursor/mcp.json` (recommended)
+- Global: `~/.cursor/mcp.json`
 
 ```json
 {
   "mcpServers": {
     "fedramp-docs": {
       "command": "npx",
-      "args": ["-y", "fedramp-docs-mcp"]
+      "args": ["-y", "fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
     }
   }
 }
 ```
 
-3. Restart Cursor
+Restart Cursor after saving. You can also configure via **Cursor Settings > MCP**.
 
 ## VS Code with Continue
 
@@ -83,16 +88,19 @@ You should see a response showing indexed file counts and repository information
 
 ## Zed
 
-1. Open Zed settings
+1. Open Zed settings (`zed: open settings`)
 
-2. Add to the `language_servers` section:
+2. Add to the `context_servers` section:
 
 ```json
 {
-  "language_servers": {
+  "context_servers": {
     "fedramp-docs": {
-      "command": "npx",
-      "args": ["-y", "fedramp-docs-mcp"]
+      "command": {
+        "path": "npx",
+        "args": ["-y", "fedramp-docs-mcp"]
+      },
+      "settings": {}
     }
   }
 }
@@ -132,6 +140,93 @@ If LM Studio supports MCP servers:
 3. **Save the file** - Kiro automatically loads MCP servers on config change
 
 4. **Test it** - Ask Kiro: "List all FedRAMP FRMR documents"
+
+## Codex (OpenAI)
+
+[Codex](https://github.com/openai/codex) is OpenAI's open-source coding agent with MCP support via TOML configuration.
+
+**Config file location:**
+- Global: `~/.codex/config.toml`
+- Project: `.codex/config.toml` (takes precedence)
+
+```toml
+[mcp_servers.fedramp-docs]
+command = "npx"
+args = ["-y", "fedramp-docs-mcp"]
+
+[mcp_servers.fedramp-docs.env]
+FEDRAMP_DOCS_AUTO_UPDATE = "true"
+```
+
+You can also manage MCP servers via `codex mcp`.
+
+## Windsurf
+
+[Windsurf](https://windsurf.com/) is an AI-powered IDE with native MCP support.
+
+**Config file location:** `~/.codeium/windsurf/mcp_config.json`
+
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "npx",
+      "args": ["-y", "fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+Restart Windsurf after saving.
+
+## VS Code + GitHub Copilot
+
+VS Code has native MCP support through GitHub Copilot (no extensions required).
+
+**Config file location:** `.vscode/mcp.json` (workspace-scoped)
+
+**Note:** VS Code uses `servers` (not `mcpServers`) and requires `"type": "stdio"`.
+
+```json
+{
+  "servers": {
+    "fedramp-docs": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "fedramp-docs-mcp"]
+    }
+  }
+}
+```
+
+After saving, Copilot will detect the new server automatically. You can manage MCP servers from the **Command Palette** (`Ctrl+Shift+P` > "MCP: List Servers").
+
+## Gemini CLI
+
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) is Google's command-line AI agent with MCP support.
+
+**Config file location:**
+- Global: `~/.gemini/settings.json`
+- Project: `.gemini/settings.json` (takes precedence)
+
+```json
+{
+  "mcpServers": {
+    "fedramp-docs": {
+      "command": "npx",
+      "args": ["-y", "fedramp-docs-mcp"],
+      "env": {
+        "FEDRAMP_DOCS_AUTO_UPDATE": "true"
+      }
+    }
+  }
+}
+```
+
+Restart Gemini CLI after saving.
 
 ## Generic MCP Client Configuration
 
