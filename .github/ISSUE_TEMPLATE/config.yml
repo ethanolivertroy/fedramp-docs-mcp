@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ethanolivertroy/fedramp-docs-mcp/security/advisories/new
+    about: Report security issues privately through GitHub Security Advisories.
+  - name: Questions and discussion
+    url: https://github.com/ethanolivertroy/fedramp-docs-mcp/discussions
+    about: Ask questions or start a discussion outside of issue tracking.
