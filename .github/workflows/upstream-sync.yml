@@ -1,0 +1,227 @@
+name: Upstream FedRAMP Docs Sync
+
+on:
+  schedule:
+    # Weekly on Mondays at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Read stored SHA
+        id: stored
+        run: |
+          SHA=$(cat .github/upstream-commit.sha | tr -d '[:space:]')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Query upstream HEAD
+        id: upstream
+        run: |
+          SHA=$(git ls-remote https://github.com/FedRAMP/docs refs/heads/main | cut -f1)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+
+      - name: Compare SHAs
+        id: compare
+        run: |
+          if [ "${{ steps.stored.outputs.sha }}" = "${{ steps.upstream.outputs.sha }}" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream has not changed. Exiting."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Upstream changed: ${{ steps.stored.outputs.sha }} → ${{ steps.upstream.outputs.sha }}"
+          fi
+
+      - name: Check for existing open issues
+        if: steps.compare.outputs.changed == 'true'
+        id: existing
+        run: |
+          OPEN=$(gh issue list --label upstream-sync --state open --json number --jq 'length')
+          echo "count=$OPEN" >> "$GITHUB_OUTPUT"
+          if [ "$OPEN" -gt "0" ]; then
+            echo "An upstream-sync issue is already open. Skipping."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clone upstream repo
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: |
+          git clone --branch main https://github.com/FedRAMP/docs /tmp/fedramp-docs
+
+      - name: Generate change summary
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        id: summary
+        run: |
+          cd /tmp/fedramp-docs
+
+          STORED="${{ steps.stored.outputs.sha }}"
+          UPSTREAM="${{ steps.upstream.outputs.sha }}"
+
+          {
+            echo 'body<<SUMMARY_EOF'
+
+            echo "## Upstream Change Summary"
+            echo ""
+            echo "FedRAMP/docs has new commits since our last sync."
+            echo ""
+            echo "- **Stored SHA**: \`$STORED\`"
+            echo "- **Upstream SHA**: \`$UPSTREAM\`"
+            echo ""
+
+            echo "### Commit log"
+            echo '```'
+            git log --oneline "${STORED}..${UPSTREAM}" 2>/dev/null || echo "(stored SHA not in history — may need full clone)"
+            echo '```'
+            echo ""
+
+            echo "### Diffstat"
+            echo '```'
+            git diff --stat "${STORED}..${UPSTREAM}" 2>/dev/null || echo "(diffstat unavailable)"
+            echo '```'
+            echo ""
+
+            echo "### Changed files"
+            echo '```'
+            git diff --name-only "${STORED}..${UPSTREAM}" 2>/dev/null || echo "(file list unavailable)"
+            echo '```'
+            echo ""
+
+            # Detect new FRMR document types
+            NEW_JSON=$(git diff --name-only "${STORED}..${UPSTREAM}" 2>/dev/null | grep -i '\.json$' || true)
+            if [ -n "$NEW_JSON" ]; then
+              echo "### New/changed JSON files"
+              echo '```'
+              echo "$NEW_JSON"
+              echo '```'
+              echo ""
+            fi
+
+            echo 'SUMMARY_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: npm ci
+
+      - name: Build
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: npm run build
+
+      - name: Run unit tests
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        id: unit_tests
+        run: |
+          if npm test 2>&1 | tee /tmp/unit-test-output.txt; then
+            echo "result=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=failed" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run integration tests
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        id: integration_tests
+        run: |
+          if npm run test:integration 2>&1 | tee /tmp/integration-test-output.txt; then
+            echo "result=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=failed" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          FEDRAMP_DOCS_PATH: /tmp/fedramp-docs
+          FEDRAMP_DOCS_ALLOW_AUTO_CLONE: 'false'
+          FEDRAMP_DOCS_INDEX_PERSIST: 'false'
+
+      - name: Ensure upstream-sync label exists
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: |
+          gh label create upstream-sync \
+            --color 0e8a16 \
+            --description "Automated upstream FedRAMP/docs sync" \
+            --force
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create sync branch and update SHA
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="upstream-sync/${{ steps.upstream.outputs.short_sha }}"
+          git checkout -b "$BRANCH"
+          echo "${{ steps.upstream.outputs.sha }}" > .github/upstream-commit.sha
+          git add .github/upstream-commit.sha
+          git commit -m "chore: update upstream FedRAMP/docs SHA to ${{ steps.upstream.outputs.short_sha }}"
+          git push origin "$BRANCH"
+
+      - name: Create GitHub issue
+        if: steps.compare.outputs.changed == 'true' && steps.existing.outputs.count == '0'
+        run: |
+          UNIT="${{ steps.unit_tests.outputs.result }}"
+          INTEG="${{ steps.integration_tests.outputs.result }}"
+          BRANCH="upstream-sync/${{ steps.upstream.outputs.short_sha }}"
+
+          if [ "$UNIT" = "passed" ] && [ "$INTEG" = "passed" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="All tests passed against the new upstream data. Copilot can create a minimal PR merging the SHA update branch."
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="Some tests failed — code changes may be needed to handle upstream data changes."
+          fi
+
+          BODY=$(cat <<EOF
+          ${STATUS_EMOJI} **CI Status**: Unit tests ${UNIT}, Integration tests ${INTEG}
+
+          ${{ steps.summary.outputs.body }}
+
+          ## Test Results
+
+          ${STATUS_TEXT}
+
+          - Unit tests: **${UNIT}**
+          - Integration tests: **${INTEG}**
+
+          ## Action Required
+
+          1. Review the change summary above
+          2. Check out branch \`${BRANCH}\` which has the updated SHA file
+          3. If tests passed: merge the SHA update branch
+          4. If tests failed: investigate failures, update parsers/types as needed, then merge
+
+          ## Branch
+
+          A branch \`${BRANCH}\` has been created with the updated \`.github/upstream-commit.sha\`.
+          EOF
+          )
+
+          ISSUE_URL=$(gh issue create \
+            --title "Upstream sync: FedRAMP/docs updated to ${{ steps.upstream.outputs.short_sha }}" \
+            --body "$BODY" \
+            --label upstream-sync)
+
+          echo "Created issue: $ISSUE_URL"
+
+          # Assign to Copilot
+          ISSUE_NUM=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
+          gh issue edit "$ISSUE_NUM" --add-assignee @copilot || echo "Could not assign Copilot (may not be enabled)"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
