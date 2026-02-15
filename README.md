@@ -922,6 +922,14 @@ npm test
 
 Tests set `FEDRAMP_DOCS_PATH` to `tests/fixtures/repo`, ensuring the indexer, search, and diff logic run deterministically without needing the real FedRAMP repo.
 
+Integration tests validate the indexer against the real upstream FedRAMP/docs clone:
+
+```bash
+npm run test:integration
+```
+
+These tests clone and index the actual upstream repository, verifying that the parser handles current upstream data correctly. Set `FEDRAMP_DOCS_PATH` to skip the clone and use an existing checkout.
+
 ### Code Structure
 
 The codebase uses:
