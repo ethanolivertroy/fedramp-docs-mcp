@@ -9,6 +9,9 @@ on:
 jobs:
   mcp-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +42,14 @@ jobs:
             --stdio-command node \
             --stdio-arg dist/index.js \
             --analyzers yara \
-            --format summary
+            --format summary | tee mcp-scan-results.txt
         env:
           FEDRAMP_DOCS_ALLOW_AUTO_CLONE: 'false'
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-scan-results
+          path: mcp-scan-results.txt
+          retention-days: 30
