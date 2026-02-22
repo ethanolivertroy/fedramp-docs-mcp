@@ -57,7 +57,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.1.0",
     "@types/lunr": "^2.3.7",
-    "@types/node": "^20.12.12",
+    "@types/node": "^25.3.0",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
     "vitest": "^4.0.16"
