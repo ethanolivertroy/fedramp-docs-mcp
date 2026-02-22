@@ -1064,6 +1064,19 @@ src/
 
 Fixtures live under `tests/fixtures`, while Vitest specs reside in `tests/`.
 
+## Version History
+
+Tracks FedRAMP FRMR v0.9.2-beta documents. See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+| Version | Date | Highlights |
+|---------|------|------------|
+| v0.2.5 | 2026-02-15 | MCP client instructions for Codex, Cursor, Windsurf, VS Code + Copilot, Gemini CLI |
+| v0.2.4 | 2026-02-15 | Automated upstream sync workflow, integration test suite |
+| v0.2.3 | 2026-02-15 | MCP Security Scan CI with Cisco's MCP Scanner |
+| v0.2.1 | 2025-12-30 | Okta/Duo MFA evidence sources, enhanced `health_check` |
+| v0.2.0 | 2025-12-28 | 7 new tools, Claude Code plugin, Docker support, 12 FRMR types |
+| v0.1.0 | 2025-10-10 | Initial release with 13 core MCP tools |
+
 ## Troubleshooting
 
 ### Build Errors
