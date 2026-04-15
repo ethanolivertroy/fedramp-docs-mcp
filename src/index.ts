@@ -141,7 +141,7 @@ Examples:
   # Add to Claude Desktop config
   npx fedramp-docs-mcp mcp-config
 
-Learn more: https://github.com/ethanolivertroy/fedramp-docs-mcp
+Learn more: https://github.com/hackIDLE/fedramp-docs-mcp
 `);
 }
 

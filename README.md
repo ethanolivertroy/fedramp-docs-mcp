@@ -1,6 +1,6 @@
 # FedRAMP Docs MCP Server
 
-[![MCP Security Scan](https://github.com/ethanolivertroy/fedramp-docs-mcp/actions/workflows/mcp-scan.yml/badge.svg)](https://github.com/ethanolivertroy/fedramp-docs-mcp/actions/workflows/mcp-scan.yml)
+[![MCP Security Scan](https://github.com/hackIDLE/fedramp-docs-mcp/actions/workflows/mcp-scan.yml/badge.svg)](https://github.com/hackIDLE/fedramp-docs-mcp/actions/workflows/mcp-scan.yml)
 
 > **Disclaimer:** This is an unofficial, community project and is not affiliated with, endorsed by, or associated with FedRAMP or the U.S. federal government. The author is not officially affiliated with FedRAMP. The FedRAMP name and any related marks are property of their respective owners.
 
@@ -899,7 +899,7 @@ The repository includes a Claude Code plugin that provides slash commands, agent
 In Claude Code, run:
 
 ```
-/plugin marketplace add ethanolivertroy/fedramp-docs-mcp
+/plugin marketplace add hackIDLE/fedramp-docs-mcp
 /plugin install fedramp-docs
 ```
 

@@ -38,7 +38,7 @@ A Claude Code plugin for FedRAMP compliance, documentation search, and control m
 In Claude Code, run:
 
 ```
-/plugin marketplace add ethanolivertroy/fedramp-docs-mcp
+/plugin marketplace add hackIDLE/fedramp-docs-mcp
 /plugin install fedramp-docs
 ```
 

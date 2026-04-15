@@ -5,7 +5,7 @@
   "author": {
     "name": "Ethan Troy"
   },
-  "repository": "https://github.com/ethanolivertroy/fedramp-docs-mcp",
+  "repository": "https://github.com/hackIDLE/fedramp-docs-mcp",
   "license": "MIT",
   "keywords": ["fedramp", "compliance", "nist", "security", "frmr", "cloud"]
 }

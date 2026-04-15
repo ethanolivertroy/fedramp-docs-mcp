@@ -80,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Claude Code marketplace support** - Install plugin with:
   ```
-  /plugin marketplace add ethanolivertroy/fedramp-docs-mcp
+  /plugin marketplace add hackIDLE/fedramp-docs-mcp
   /plugin install fedramp-docs
   ```
 

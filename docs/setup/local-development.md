@@ -20,7 +20,7 @@ git --version    # 2.0.0+
 
 ```bash
 # Clone the repository
-git clone https://github.com/ethanolivertroy/fedramp-docs-mcp.git
+git clone https://github.com/hackIDLE/fedramp-docs-mcp.git
 cd fedramp-docs-mcp
 
 # Install dependencies

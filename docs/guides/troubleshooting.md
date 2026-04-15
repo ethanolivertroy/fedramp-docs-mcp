@@ -246,7 +246,7 @@ DEBUG=fedramp:* npx fedramp-docs-mcp
 
 If these solutions don't resolve your issue:
 
-1. **Check existing issues:** [GitHub Issues](https://github.com/ethanolivertroy/fedramp-docs-mcp/issues)
+1. **Check existing issues:** [GitHub Issues](https://github.com/hackIDLE/fedramp-docs-mcp/issues)
 
 2. **Open a new issue** with:
    - Node.js version (`node --version`)

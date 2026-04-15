@@ -116,4 +116,4 @@ See [Tools Reference](docs/reference/tools.md) for all 20 tools.
 
 **Server not appearing in client?** Check JSON syntax in config file, then restart the client.
 
-**Need help?** See [Troubleshooting Guide](docs/guides/troubleshooting.md) or [open an issue](https://github.com/ethanolivertroy/fedramp-docs-mcp/issues).
+**Need help?** See [Troubleshooting Guide](docs/guides/troubleshooting.md) or [open an issue](https://github.com/hackIDLE/fedramp-docs-mcp/issues).

@@ -246,7 +246,7 @@ docker run -it \
 
 ```bash
 # Clone from official repository
-git clone https://github.com/ethanolivertroy/fedramp-docs-mcp.git
+git clone https://github.com/hackIDLE/fedramp-docs-mcp.git
 
 # Verify commits are signed (if GPG signing is configured)
 git log --show-signature -1
@@ -265,7 +265,7 @@ npm ci  # Uses package-lock.json exactly
 For maximum control, build from verified source:
 
 ```bash
-git clone https://github.com/ethanolivertroy/fedramp-docs-mcp.git
+git clone https://github.com/hackIDLE/fedramp-docs-mcp.git
 cd fedramp-docs-mcp
 npm ci
 npm run build

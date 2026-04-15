@@ -5,7 +5,7 @@ Welcome to the FedRAMP Docs MCP documentation. This MCP server provides 20 tools
 ## Quick Links
 
 - [Quick Start Guide](../QUICKSTART.md) - Get up and running in minutes
-- [GitHub Repository](https://github.com/ethanolivertroy/fedramp-docs-mcp)
+- [GitHub Repository](https://github.com/hackIDLE/fedramp-docs-mcp)
 - [npm Package](https://www.npmjs.com/package/fedramp-docs-mcp)
 
 ## Documentation Sections
