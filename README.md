@@ -1,5 +1,15 @@
 # FedRAMP Docs MCP Server
 
+> ## ⚠️ This project is sunsetting
+>
+> This MCP server is no longer under active development. The FedRAMP search and FRMR parsing capabilities are being folded into **[GRC Clanker](https://github.com/hackIDLE/grclanker)** and **[myctrl.tools](https://myctrl.tools)**, where they live inside an actual GRC workflow instead of as a standalone subprocess.
+>
+> The npm package and this repository remain available for existing users, but no new features will land here. For the reasoning and post-mortem, see the [project writeup](https://ethantroy.dev/projects/ai-ml/fedramp-docs-mcp/).
+>
+> — Ethan (2026-04-15)
+
+---
+
 [![MCP Security Scan](https://github.com/hackIDLE/fedramp-docs-mcp/actions/workflows/mcp-scan.yml/badge.svg)](https://github.com/hackIDLE/fedramp-docs-mcp/actions/workflows/mcp-scan.yml)
 
 > **Disclaimer:** This is an unofficial, community project and is not affiliated with, endorsed by, or associated with FedRAMP or the U.S. federal government. The author is not officially affiliated with FedRAMP. The FedRAMP name and any related marks are property of their respective owners.

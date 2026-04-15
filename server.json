@@ -6,12 +6,12 @@
     "url": "https://github.com/hackIDLE/fedramp-docs-mcp",
     "source": "github"
   },
-  "version": "0.2.2",
+  "version": "0.2.6",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "fedramp-docs-mcp",
-      "version": "0.2.2",
+      "version": "0.2.6",
       "transport": {
         "type": "stdio"
       },

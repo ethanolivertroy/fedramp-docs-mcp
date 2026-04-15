@@ -1,8 +1,9 @@
 {
   "name": "fedramp-docs-mcp",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "mcpName": "io.github.ethanolivertroy/fedramp-docs-mcp",
-  "description": "Model Context Protocol server for exploring the FedRAMP docs repository.",
+  "description": "[DEPRECATED] MCP server for exploring the FedRAMP docs repository. Consolidated into GRC Clanker and myctrl.tools — see README.",
+  "deprecated": "This package is no longer maintained. Functionality has been folded into GRC Clanker (https://github.com/hackIDLE/grclanker) and myctrl.tools. Existing installs will continue to work.",
   "type": "module",
   "author": "Ethan Troy",
   "license": "MIT",

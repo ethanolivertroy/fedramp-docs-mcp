@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-04-15
+
+### Deprecated
+
+- **Project is sunsetting.** This MCP server is no longer under active development.
+  The FedRAMP search and FRMR parsing capabilities are being consolidated into
+  [GRC Clanker](https://github.com/hackIDLE/grclanker) and [myctrl.tools](https://myctrl.tools),
+  where they live inside a GRC workflow instead of as a standalone subprocess.
+- Package marked `deprecated` in npm metadata. Existing installs continue to work;
+  no new features will land in this repository.
+- See the [project writeup](https://ethantroy.dev/projects/ai-ml/fedramp-docs-mcp/) for
+  the reasoning and the lessons this project taught.
+
+### Changed
+
+- Repo transferred from `ethanolivertroy/fedramp-docs-mcp` to `hackIDLE/fedramp-docs-mcp`.
+  GitHub URL redirects cover legacy links. The MCP registry identifier
+  (`io.github.ethanolivertroy/fedramp-docs-mcp`) is preserved for registry compatibility.
+- CI matrix dropped Node 18 (vitest 4.1.x requires Node 20+); pinned `@types/node`
+  Dependabot updates to the matching major.
+
 ## [0.2.5] - 2026-02-15
 
 ### Added
